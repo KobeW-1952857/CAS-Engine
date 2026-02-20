@@ -1,5 +1,7 @@
 #include "camera.h"
 
+#include <Nexus/Window/GLFWWindow.h>
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/trigonometric.hpp>
@@ -8,46 +10,44 @@
 
 Camera::Camera(Point position, float fov) : m_position(position), m_fov(fov) { updateVectors(); }
 
-// void Camera::addUnityControls(std::unique_ptr<Nexus::GLFWWindow>& window) {
-//   static float speed = 0.05f;
+void Camera::addControls(Nexus::Window& window) {
+  auto* native_window = static_cast<GLFWwindow*>(window.getNativeWindow());
 
-//   GLFWwindow* native_window = (GLFWwindow*)window->getNativeWindow();
+  window.onMouseMove([this, native_window, &window](double xpos, double ypos) -> bool {
+    static bool firstMouse = true;
+    static glm::vec2 last_pos{};
+    static float sensitivity = 0.1f;
 
-//   window->onMouseMove([this, &window, native_window](double xpos, double ypos) -> bool {
-//     static bool firstMouse = true;
-//     static glm::vec2 last_pos{window->getWidth() / 2.0f, window->getHeight() / 2.0f};
-//     static float sensitivity = 0.1f;
+    if (glfwGetMouseButton(native_window, GLFW_MOUSE_BUTTON_RIGHT) != GLFW_PRESS) {
+      firstMouse = true;
+      return false;
+    }
 
-//     if (glfwGetMouseButton(native_window, GLFW_MOUSE_BUTTON_RIGHT) != GLFW_PRESS) {
-//       firstMouse = true;
-//       return false;
-//     }
+    if (firstMouse) {
+      last_pos = {xpos, ypos};
+      firstMouse = false;
+    }
 
-//     if (firstMouse) {
-//       last_pos = {xpos, ypos};
-//       firstMouse = false;
-//     }
+    glm::vec2 delta = {xpos - last_pos.x, last_pos.y - ypos};
+    last_pos = {xpos, ypos};
 
-//     glm::vec2 delta = {xpos - last_pos.x, last_pos.y - ypos};
-//     last_pos = {xpos, ypos};
+    this->rotate(delta * sensitivity);
 
-//     this->rotate(delta * sensitivity);
+    return true;
+  });
 
-//     return true;
-//   });
-
-//   window->onMouseButton([&](int button, int action, int mods) -> bool {
-//     if (button == GLFW_MOUSE_BUTTON_RIGHT) {
-//       if (action == GLFW_PRESS) {
-//         glfwSetInputMode((GLFWwindow*)window->getNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-//       } else if (action == GLFW_RELEASE) {
-//         glfwSetInputMode((GLFWwindow*)window->getNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-//       }
-//       return true;
-//     }
-//     return false;
-//   });
-// }
+  window.onMouseButton([&window, native_window](int button, int action, int mods) -> bool {
+    if (button == GLFW_MOUSE_BUTTON_RIGHT) {
+      if (action == GLFW_PRESS) {
+        glfwSetInputMode(native_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+      } else if (action == GLFW_RELEASE) {
+        glfwSetInputMode(native_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+      }
+      return true;
+    }
+    return false;
+  });
+}
 
 Point Camera::getPosition() const { return m_position; }
 
@@ -71,17 +71,17 @@ void Camera::move(Direction direction) {
   m_position += m_front * direction.z + m_right * direction.x + m_up * direction.y;
 }
 
-// void Camera::moveUnity(std::unique_ptr<Nexus::GLFWWindow>& window) {
-//   static float speed = 0.05f;
-//   auto native_window = (GLFWwindow*)window->getNativeWindow();
+void Camera::processInput(Nexus::Window& window) {
+  static float speed = 0.05f;
+  auto* native_window = static_cast<GLFWwindow*>(window.getNativeWindow());
 
-//   if (glfwGetKey(native_window, GLFW_KEY_W) == GLFW_PRESS) move({0, 0, speed});   // Forward (Z)
-//   if (glfwGetKey(native_window, GLFW_KEY_S) == GLFW_PRESS) move({0, 0, -speed});  // Backward
-//   if (glfwGetKey(native_window, GLFW_KEY_A) == GLFW_PRESS) move({-speed, 0, 0});  // Left (X)
-//   if (glfwGetKey(native_window, GLFW_KEY_D) == GLFW_PRESS) move({speed, 0, 0});   // Right
-//   if (glfwGetKey(native_window, GLFW_KEY_E) == GLFW_PRESS) move({0, speed, 0});   // Up (Y)
-//   if (glfwGetKey(native_window, GLFW_KEY_Q) == GLFW_PRESS) move({0, -speed, 0});  // Down
-// }
+  if (glfwGetKey(native_window, GLFW_KEY_W) == GLFW_PRESS) move({0, 0, speed});   // Forward (Z)
+  if (glfwGetKey(native_window, GLFW_KEY_S) == GLFW_PRESS) move({0, 0, -speed});  // Backward
+  if (glfwGetKey(native_window, GLFW_KEY_A) == GLFW_PRESS) move({-speed, 0, 0});  // Left (X)
+  if (glfwGetKey(native_window, GLFW_KEY_D) == GLFW_PRESS) move({speed, 0, 0});   // Right
+  if (glfwGetKey(native_window, GLFW_KEY_E) == GLFW_PRESS) move({0, speed, 0});   // Up (Y)
+  if (glfwGetKey(native_window, GLFW_KEY_Q) == GLFW_PRESS) move({0, -speed, 0});  // Down
+}
 
 void Camera::rotate(glm::vec2 delta) {
   m_yaw += delta.x;

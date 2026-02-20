@@ -5,11 +5,15 @@
 
 #include "utils.h"
 
+namespace Nexus {
+class Window;
+}
 class Camera {
  public:
   Camera(Point position, float fov);
 
-  // void addUnityControls(std::unique_ptr<Nexus::GLFWWindow>& window);
+  void addControls(Nexus::Window& window);
+  void processInput(Nexus::Window& window);
 
   Point getPosition() const;
   void setPosition(Point position);
@@ -22,7 +26,6 @@ class Camera {
 
   Direction getUp() const;
 
-  // void moveUnity(std::unique_ptr<Nexus::GLFWWindow>& window);
   void move(Direction direction);
   void rotate(glm::vec2 delta);
 
