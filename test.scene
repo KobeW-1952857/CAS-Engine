@@ -1,0 +1,29 @@
+AssetRegistry:
+  - ID: 3048219217809833555
+    Type: 2
+    Filepath: sphere
+  - ID: 16566490284054598433
+    Type: 2
+    Filepath: cube
+  - ID: 15774659134662645248
+    Type: 3
+    Filepath: basic
+  - ID: 12405504683030799616
+    Type: 4
+    Filepath: default
+  - ID: 17223584530037052191
+    Type: 3
+    Filepath: default
+Scene: Untitled scene
+Entities:
+  - ID: 15891114078519965604
+    TagComponent:
+      Tag: Test
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      MeshHandle: 3048219217809833555
+    MaterialComponent:
+      MaterialHandle: 12405504683030799616
