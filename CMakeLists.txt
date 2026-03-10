@@ -19,7 +19,6 @@ add_executable(CASEngine
 	src/core/asset_manager.cpp
     src/core/input.cpp
     src/core/project.cpp
-    src/core/resource_manager.cpp
     src/core/uuid.cpp
     src/editor/editor.cpp
     src/editor/editor_camera.cpp

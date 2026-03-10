@@ -161,3 +161,9 @@ void Material::bind() const {
     texture_slot++;
   }
 }
+
+void Material::resetProperties() {
+  m_properties.clear();
+  m_textures.clear();
+  modified = true;
+}

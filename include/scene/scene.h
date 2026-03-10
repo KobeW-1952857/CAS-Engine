@@ -21,6 +21,8 @@ class Scene : public std::enable_shared_from_this<Scene> {
 
   void onUpdate(float dt);
   void onRender(const glm::mat4& view_proj);
+  void renderEntity(Entity entity, const glm::mat4& view_proj);
+  void renderEntityOutline(Entity entity, const glm::mat4& view_proj);
   void onImGuiRender();
 
  private:

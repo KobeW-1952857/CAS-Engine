@@ -8,6 +8,7 @@
 
 #include "core/asset_manager.h"
 #include "core/project.h"
+#include "renderer/framebuffer.h"
 #include "scene/components.h"
 #include "utils/filesystem.h"
 #include "utils/utils.h"
@@ -23,7 +24,14 @@ Editor::Editor(const std::vector<std::string>& args) : m_viewport_size(1280, 720
 }
 
 void Editor::init() {
-  m_framebuffer = std::make_shared<Framebuffer>(1280, 720);
+  FramebufferSpecification spec;
+  spec.width = 1280;
+  spec.height = 720;
+  spec.attachments = {FramebufferTextureSpecification(FramebufferTextureFormat::RGBA8),             // Color
+                      FramebufferTextureSpecification(FramebufferTextureFormat::RED_INTEGER),       // Entity ID
+                      FramebufferTextureSpecification(FramebufferTextureFormat::DEPTH24STENCIL8)};  // Depth
+
+  m_framebuffer = std::make_shared<Framebuffer>(spec);
   m_active_scene = std::make_shared<Scene>();
   m_serializer.setContext(m_active_scene);
   m_scene_hierarchy_panel.setContext(m_active_scene);
@@ -68,8 +76,10 @@ void Editor::onUpdate(float dt) {
   }
 
   m_framebuffer->bind();
-  m_framebuffer->resize(m_viewport_size.x, m_viewport_size.y);
+  m_framebuffer->resize(static_cast<uint32_t>(m_viewport_size.x), static_cast<uint32_t>(m_viewport_size.y));
+
   m_framebuffer->clear({0.1f, 0.1f, 0.1f, 1.0f});
+  m_framebuffer->clearAttachment(1, -1);
 
   if (m_active_scene) {
     glm::mat4 view_proj = m_editor_camera.getViewProjectionMatrix();
@@ -140,9 +150,31 @@ void Editor::drawViewport() {
     m_editor_camera.setViewportSize(m_viewport_size.x, m_viewport_size.y);
   }
 
-  uint32_t texture_id = m_framebuffer->getTexture();
+  uint32_t texture_id = m_framebuffer->getColorAttachmentRendererID();
   // NOLINTNEXTLINE
   ImGui::Image(reinterpret_cast<void*>(texture_id), viewport_panel_size, ImVec2(0, 1), ImVec2(1, 0));
+
+  if (ImGui::IsMouseClicked(0) && m_viewport_hovered) {
+    ImVec2 mouse_pos = ImGui::GetMousePos();
+    ImVec2 viewport_min = ImGui::GetItemRectMin();
+
+    mouse_pos.x -= viewport_min.x;
+    mouse_pos.y -= viewport_min.y;
+
+    // Flip Y coordinate for OpenGL
+    mouse_pos.y = m_viewport_size.y - mouse_pos.y;
+
+    int mouse_x = static_cast<int>(mouse_pos.x);
+    int mouse_y = static_cast<int>(mouse_pos.y);
+
+    int entity_id = m_framebuffer->readPixel(1, mouse_x, mouse_y);
+
+    if (entity_id == -1) {
+      m_selection_context = std::monostate{};
+    } else {
+      m_selection_context = Entity(static_cast<entt::entity>(entity_id), m_active_scene);
+    }
+  }
 
   ImGui::End();
   ImGui::PopStyleVar();

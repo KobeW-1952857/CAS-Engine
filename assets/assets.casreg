@@ -14,3 +14,6 @@ Assets:
     Type: 1
     Filepath: engine//materials/unlit.casmat
     Default: true
+  - ID: 5
+    Type: 3
+    Filepath: engine://shaders/mrt

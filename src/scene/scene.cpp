@@ -1,5 +1,6 @@
 #include "scene/scene.h"
 
+#include <cstdint>
 #include <glm/gtx/string_cast.hpp>
 
 #include "core/asset_manager.h"
@@ -34,21 +35,32 @@ void Scene::onRender(const glm::mat4& view_proj) {
   {
     auto view = m_registry.view<TransformComponent, MaterialComponent, MeshComponent>();
     for (auto entity : view) {
-      auto [transform, material_component, mesh_component] =
-          view.get<TransformComponent, MaterialComponent, MeshComponent>(entity);
-
-      auto mesh = AssetManager::getAsset<Mesh>(mesh_component.mesh_handle);
-      auto material = AssetManager::getAsset<Material>(material_component.material_handle);
-
-      if (mesh && material) {
-        material->setProperty("u_proj_view", view_proj);
-        material->setProperty("u_model", transform.getTransform());
-
-        material->bind();
-        mesh->render();
-      }
+      renderEntity(Entity(entity, shared_from_this()), view_proj);
     }
   }
+}
+
+void Scene::renderEntity(Entity entity, const glm::mat4& view_proj) {
+  if (!entity || !entity.hasComponent<MeshComponent>() || !entity.hasComponent<MaterialComponent>()) return;
+  auto& tc = entity.getComponent<TransformComponent>();
+  auto& mc = entity.getComponent<MeshComponent>();
+  auto& matc = entity.getComponent<MaterialComponent>();
+
+  auto mesh = AssetManager::getAsset<Mesh>(mc.mesh_handle);
+  auto material = AssetManager::getAsset<Material>(matc.material_handle);
+
+  if (mesh && material) {
+    material->setProperty("u_proj_view", view_proj);
+    material->setProperty("u_model", tc.getTransform());
+    material->setProperty("u_entity_id", static_cast<int>(static_cast<uint32_t>(entity)));
+
+    material->bind();
+    mesh->render();
+  }
+}
+
+void Scene::renderEntityOutline(Entity entity, const glm::mat4& view_proj) {
+  if (!entity || !entity.hasComponent<MeshComponent>()) return;
 }
 
 void Scene::onImGuiRender() {}

@@ -50,6 +50,7 @@ class Material : public Asset {
   void bind() const;
 
   void serialize(const std::filesystem::path& filepath) const override;
+  void resetProperties();
 
  public:
   std::shared_ptr<Shader> shader;

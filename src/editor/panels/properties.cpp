@@ -24,7 +24,10 @@ static void drawMaterial(const std::shared_ptr<Material>& material, const AssetM
       bool selected = id == shader->handle;
       auto name = meta.filepath.filename().c_str();
 
-      //   if (ImGui::Selectable(name, selected)) material->shader = AssetManager::getAsset<Shader>(id);
+      if (ImGui::Selectable(name, selected)) {
+        material->shader = AssetManager::getAsset<Shader>(id);
+        material->resetProperties();
+      }
     }
     ImGui::EndCombo();
   }
