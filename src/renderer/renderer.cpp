@@ -10,7 +10,10 @@ std::shared_ptr<Shader> Renderer::s_outline_shader;
 void Renderer::init() {
   auto vertex_path = FileSystem::resolvePath("engine://shaders/outline.vert");
   auto frag_path = FileSystem::resolvePath("engine://shaders/outline.frag");
-  s_outline_shader = std::make_shared<Shader>(vertex_path.c_str(), frag_path.c_str());
+  s_outline_shader = std::make_shared<Shader>();
+  s_outline_shader->addStage(ShaderStage::Vertex, vertex_path);
+  s_outline_shader->addStage(ShaderStage::Fragment, frag_path);
+  s_outline_shader->compile();
 }
 
 void Renderer::beginScene(const glm::mat4& view_proj, const glm::vec2& viewport_size) {

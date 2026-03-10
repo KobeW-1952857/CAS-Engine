@@ -2,7 +2,10 @@
 
 #include <Nexus/Window/GLFWWindow.h>
 
+#include <filesystem>
 #include <glm/glm.hpp>
+#include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "core/asset.h"
@@ -13,19 +16,25 @@ struct UniformInfo {
   GLenum type;
 };
 
+enum class ShaderStage : uint8_t { Vertex, Fragment, TessControl, TessEvaluation, Geometry /*, Compute*/ };
+
 class Shader : public Asset {
  public:
   GLuint m_id;
 
-  Shader() { type = AssetType::Shader; };
-  Shader(const char* vertexFilePath, const char* fragmentFilePath);
+  Shader() {
+    m_id = glCreateProgram();
+    type = AssetType::Shader;
+  };
   Shader& operator=(Shader other);
   ~Shader();
 
   void use();
   bool compile();
-  bool addVertexShader(const char* vertexData);
-  bool addFragmentShader(const char* fragmentData);
+  bool addStage(ShaderStage stage, const std::filesystem::path& path);
+  void removeStage(ShaderStage stage);
+  bool hasStage(ShaderStage stage);
+  bool relink();
   bool linkProgram();
 
   std::vector<UniformInfo> getActiveUniforms() const;
@@ -40,17 +49,14 @@ class Shader : public Asset {
   void setMVP(const glm::mat4& model, const glm::mat4& view, const glm::mat4& projection) const;
 
  private:
-  bool m_hasVertShader;
-  bool m_hasFragShader;
-  bool m_isLinked;
-  bool m_toDeleteProgram;
-  GLuint m_vertShaderId;
-  GLuint m_fragShaderId;
-  bool m_isDirectionalLightSet;
+  std::unordered_map<ShaderStage, GLuint> m_stageIds;
+  std::unordered_map<ShaderStage, std::string> m_stagePaths;
 
-  std::string m_vertexFilePath;
-  std::string m_fragmentFilePath;
+  bool m_isLinked = false;
 
-  bool checkShaderCompileError(unsigned int shader, const char* type);
+  static GLenum toGLenum(ShaderStage stage);
+  static const char* stageName(ShaderStage stage);
+  bool addShaderStage(ShaderStage stage, const char* sourceData);
+  bool checkShaderCompileError(GLuint shader, ShaderStage type);
   bool checkProgramLinkError();
 };
