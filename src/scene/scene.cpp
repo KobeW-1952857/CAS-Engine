@@ -6,6 +6,7 @@
 #include "core/asset_manager.h"
 #include "core/uuid.h"
 #include "renderer/material.h"
+#include "renderer/renderer.h"
 #include "scene/components.h"
 #include "scene/entity.h"
 
@@ -31,13 +32,27 @@ void Scene::destroyEntity(Entity entity) {
   m_entity_map.erase(id);
 }
 
-void Scene::onRender(const glm::mat4& view_proj) {
-  {
-    auto view = m_registry.view<TransformComponent, MaterialComponent, MeshComponent>();
-    for (auto entity : view) {
-      renderEntity(Entity(entity, shared_from_this()), view_proj);
-    }
+void Scene::onRender(const glm::mat4& view_proj, const glm::vec2& viewport_size, Entity selected_entity) {
+  Renderer::beginScene(view_proj, viewport_size);
+
+  auto view = m_registry.view<TransformComponent, MaterialComponent, MeshComponent>();
+  for (auto entity : view) {
+    Entity e(entity, shared_from_this());
+    auto mesh = AssetManager::getAsset<Mesh>(e.getComponent<MeshComponent>().mesh_handle);
+    auto material = AssetManager::getAsset<Material>(e.getComponent<MaterialComponent>().material_handle);
+    bool is_selected = (e == selected_entity);
+
+    Renderer::submit(mesh, material, e.getComponent<TransformComponent>().getTransform(), static_cast<int>(entity),
+                     is_selected);
   }
+
+  if (selected_entity) {
+    auto& tc = selected_entity.getComponent<TransformComponent>();
+    auto mesh = AssetManager::getAsset<Mesh>(selected_entity.getComponent<MeshComponent>().mesh_handle);
+    Renderer::submitOutline(mesh, tc.getTransform());
+  }
+
+  Renderer::endScene();
 }
 
 void Scene::renderEntity(Entity entity, const glm::mat4& view_proj) {

@@ -41,10 +41,18 @@ class Framebuffer {
 
   const FramebufferSpecification& getSpecification() const { return m_spec; }
 
+  uint32_t getDebugEntityIDTextureID();
+  const std::unordered_map<int, std::tuple<uint8_t, uint8_t, uint8_t>>& getDebugEntityColorMap() const {
+    return m_debug_color_map;
+  }
+
  private:
   void invalidate();
 
   uint32_t m_rendererID = 0;
+
+  uint32_t m_debug_entity_id_texture = 0;
+  std::unordered_map<int, std::tuple<uint8_t, uint8_t, uint8_t>> m_debug_color_map;
 
   FramebufferSpecification m_spec;
   std::vector<std::shared_ptr<Texture>> m_colorAttachments;

@@ -34,6 +34,7 @@ add_executable(CASEngine
     src/renderer/shader.cpp
     src/renderer/tesselation_shader.cpp
     src/renderer/texture.cpp
+    src/renderer/renderer.cpp
     src/scene/scene.cpp
     src/scene/scene_serializer.cpp
     src/utils/file_dialog.mm

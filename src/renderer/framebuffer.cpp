@@ -129,3 +129,67 @@ uint32_t Framebuffer::getDepthAttachmentRendererID() const {
   assert(m_depthAttachment && "No depth attachment");
   return m_depthAttachment->getRendererID();
 }
+
+uint32_t Framebuffer::getDebugEntityIDTextureID() {
+  m_debug_color_map.clear();
+  m_debug_color_map[-1] = {0, 0, 0};
+  int w = m_spec.width;
+  int h = m_spec.height;
+
+  // Read raw integer pixels from attachment 1
+  std::vector<int> pixels(w * h);
+  bind();
+  glReadBuffer(GL_COLOR_ATTACHMENT1);
+  glReadPixels(0, 0, w, h, GL_RED_INTEGER, GL_INT, pixels.data());
+  unbind();
+
+  // Simple hash-based color generation for any other ID
+  auto id_to_color = [&](int id) -> std::tuple<uint8_t, uint8_t, uint8_t> {
+    if (m_debug_color_map.contains(id)) return m_debug_color_map[id];
+    // Spread IDs into visually distinct hues using golden ratio
+    float hue = glm::fract(id * 0.618033f);
+    // HSV to RGB with S=0.8, V=0.9
+    float h = hue * 6.0f;
+    float c = 0.8f * 0.9f;
+    float x = c * (1.0f - std::abs(std::fmod(h, 2.0f) - 1.0f));
+    glm::vec3 rgb{};
+    if (h < 1)
+      rgb = {c, x, 0};
+    else if (h < 2)
+      rgb = {x, c, 0};
+    else if (h < 3)
+      rgb = {0, c, x};
+    else if (h < 4)
+      rgb = {0, x, c};
+    else if (h < 5)
+      rgb = {x, 0, c};
+    else
+      rgb = {c, 0, x};
+    auto result = std::make_tuple(static_cast<uint8_t>(rgb.r * 255), static_cast<uint8_t>(rgb.g * 255),
+                                  static_cast<uint8_t>(rgb.b * 255));
+    m_debug_color_map[id] = result;
+    return result;
+  };
+
+  // Build RGBA8 output
+  std::vector<uint8_t> rgba(w * h * 4);
+  for (int i = 0; i < w * h; i++) {
+    auto [r, g, b] = id_to_color(pixels[i]);
+    rgba[i * 4 + 0] = r;
+    rgba[i * 4 + 1] = g;
+    rgba[i * 4 + 2] = b;
+    rgba[i * 4 + 3] = 255;
+  }
+
+  // Upload to a persistent debug texture
+  if (!m_debug_entity_id_texture) {
+    glGenTextures(1, &m_debug_entity_id_texture);
+  }
+  glBindTexture(GL_TEXTURE_2D, m_debug_entity_id_texture);
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, rgba.data());
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+  glBindTexture(GL_TEXTURE_2D, 0);
+
+  return m_debug_entity_id_texture;
+}

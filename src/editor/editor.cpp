@@ -5,11 +5,14 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <variant>
 
 #include "core/asset_manager.h"
 #include "core/project.h"
 #include "renderer/framebuffer.h"
+#include "renderer/renderer.h"
 #include "scene/components.h"
+#include "scene/entity.h"
 #include "utils/filesystem.h"
 #include "utils/utils.h"
 
@@ -24,6 +27,7 @@ Editor::Editor(const std::vector<std::string>& args) : m_viewport_size(1280, 720
 }
 
 void Editor::init() {
+  Renderer::init();
   FramebufferSpecification spec;
   spec.width = 1280;
   spec.height = 720;
@@ -35,6 +39,7 @@ void Editor::init() {
   m_active_scene = std::make_shared<Scene>();
   m_serializer.setContext(m_active_scene);
   m_scene_hierarchy_panel.setContext(m_active_scene);
+
   Nexus::Logger::setCallback([](Nexus::LogLevel level, const std::string& message) {
     ConsoleMessage::Level uiLevel;
     switch (level) {
@@ -83,7 +88,9 @@ void Editor::onUpdate(float dt) {
 
   if (m_active_scene) {
     glm::mat4 view_proj = m_editor_camera.getViewProjectionMatrix();
-    m_active_scene->onRender(view_proj);
+    Entity selected =
+        std::holds_alternative<Entity>(m_selection_context) ? std::get<Entity>(m_selection_context) : Entity();
+    m_active_scene->onRender(view_proj, m_viewport_size, selected);
   }
 
   m_framebuffer->unbind();
@@ -131,6 +138,8 @@ void Editor::drawDockspace() {
     ImGui::EndMenu();
   }
   ImGui::EndMainMenuBar();
+
+  drawDebugPanel();
 
   m_scene_hierarchy_panel.onImGuiRender(m_selection_context);
   m_asset_browser_panel.onImGuiRender(m_selection_context);
@@ -203,4 +212,41 @@ void Editor::handleShortcuts() {
       }
     }
   }
+}
+
+void Editor::drawDebugPanel() {
+  ImGui::Begin("Framebuffer Debug");
+
+  ImVec2 size(256, 144);
+  uint32_t debug_tex = m_framebuffer->getDebugEntityIDTextureID();
+  ImGui::Text("Entity ID buffer");
+  ImGui::Image(reinterpret_cast<void*>(debug_tex), size, ImVec2(0, 1), ImVec2(1, 0));
+
+  // Legend
+  ImGui::Separator();
+  ImGui::Text("Legend");
+  ImDrawList* draw_list = ImGui::GetWindowDrawList();
+  const float swatch_size = 16.0f;
+  const float padding = 4.0f;
+
+  for (const auto& [id, rgb] : m_framebuffer->getDebugEntityColorMap()) {
+    auto [r, g, b] = rgb;
+    ImVec2 pos = ImGui::GetCursorScreenPos();
+
+    // Colored square
+    draw_list->AddRectFilled(pos, ImVec2(pos.x + swatch_size, pos.y + swatch_size), IM_COL32(r, g, b, 255));
+    draw_list->AddRect(
+        pos, ImVec2(pos.x + swatch_size, pos.y + swatch_size), IM_COL32(255, 255, 255, 80)  // subtle border
+    );
+
+    // Label
+    ImGui::SetCursorScreenPos(ImVec2(pos.x + swatch_size + padding, pos.y));
+    if (id == -1) {
+      ImGui::Text("Empty (-1)");
+    } else {
+      ImGui::Text("Entity ID: %d", id);
+    }
+  }
+
+  ImGui::End();
 }

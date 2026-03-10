@@ -12,6 +12,7 @@ struct Vertex {
   Direction normal;
   TextureCoord texCoord;
   Color color;
+  Direction smoothed_normal;
 };
 
 class Mesh : public Asset {
@@ -38,4 +39,6 @@ class Mesh : public Asset {
   std::vector<GLuint> m_indices;
 
   GLuint m_vao, m_vbo, m_ebo;
+
+  void computeSmoothedNormals();
 };

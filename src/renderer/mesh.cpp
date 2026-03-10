@@ -68,6 +68,8 @@ Mesh::Mesh(std::string filepath) : m_filepath(filepath) {
     }
   }
 
+  computeSmoothedNormals();
+
   initOpenGLBuffers();
 }
 
@@ -104,7 +106,30 @@ void Mesh::initOpenGLBuffers() {
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoord));
   glEnableVertexAttribArray(3);
   glVertexAttribPointer(3, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, color));
+  glEnableVertexAttribArray(4);
+  glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, smoothed_normal));
+
   glBindVertexArray(0);
 
   m_initialized = true;
+}
+
+namespace std {
+template <>
+struct hash<glm::vec3> {
+  size_t operator()(const glm::vec3& v) const {
+    size_t h1 = std::hash<float>{}(v.x);
+    size_t h2 = std::hash<float>{}(v.y);
+    size_t h3 = std::hash<float>{}(v.z);
+    return h1 ^ (h2 << 16) ^ (h3 << 32);
+  }
+};
+}  // namespace std
+
+void Mesh::computeSmoothedNormals() {
+  std::unordered_map<glm::vec3, glm::vec3> position_to_normal;
+
+  for (const auto& v : m_vertices) position_to_normal[v.position] += v.normal;
+  for (auto& [pos, normal] : position_to_normal) normal = glm::normalize(normal);
+  for (auto& v : m_vertices) v.smoothed_normal = position_to_normal[v.position];
 }

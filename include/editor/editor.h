@@ -25,6 +25,7 @@ class Editor {
  private:
   void drawDockspace();
   void drawViewport();
+  void drawDebugPanel();
   void init();
   void handleShortcuts();
 
