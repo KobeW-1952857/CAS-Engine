@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "editor/selection_context.h"
 #include "scene/entity.h"
 #include "scene/scene.h"
 
@@ -10,15 +11,12 @@ class SceneHierarchy {
   SceneHierarchy() = default;
   SceneHierarchy(const std::shared_ptr<Scene>& context) : m_context(context) {}
 
-  void onImGuiRender();
+  void onImGuiRender(SelectionContext& selection_context);
 
   void setContext(const std::shared_ptr<Scene>& context);
 
-  void setSelectionContext(Entity entity);
-  Entity getSelectionContext() { return m_selection_context; }
-
  private:
-  void drawEntityNode(Entity entity);
+  void drawEntityNode(Entity entity, SelectionContext& selection_context, Entity& entity_to_delete);
   void drawComponents(Entity entity);
 
   template <typename T>
@@ -26,5 +24,4 @@ class SceneHierarchy {
 
  private:
   std::shared_ptr<Scene> m_context;
-  Entity m_selection_context{};
 };

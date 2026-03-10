@@ -1,10 +1,10 @@
 #include "editor/editor_camera.h"
 
+#include <GLFW/glfw3.h>
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-#include "GLFW/glfw3.h"
-#include "Nexus/Log.h"
 #include "core/input.h"
 
 EditorCamera::EditorCamera(float fov, float aspect_ratio, float near_clip, float far_clip)
@@ -25,7 +25,12 @@ void EditorCamera::onUpdate(float dt) {
     mouseRotate(delta);
   }
 
-  // TODO: zoom
+  updateView();
+}
+
+void EditorCamera::focusEntity(const glm::vec3& position, const float distance) {
+  m_focal_point = position;
+  m_distance = distance;
   updateView();
 }
 

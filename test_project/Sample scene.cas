@@ -1,0 +1,24 @@
+Scene: Untitled scene
+Entities:
+  - ID: 10004101596907624391
+    TagComponent:
+      Tag: Entity 1
+    TransformComponent:
+      Translation: [0, 7, 0]
+      Rotation: [0, -2, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      MeshHandle: 2
+    MaterialComponent:
+      MaterialHandle: 15127160040946736779
+  - ID: 13760195744637166698
+    TagComponent:
+      Tag: Entity 2
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 4, 10]
+    MeshComponent:
+      MeshHandle: 1
+    MaterialComponent:
+      MaterialHandle: 16899454287262494091

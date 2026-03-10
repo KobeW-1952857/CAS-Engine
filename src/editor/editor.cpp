@@ -1,15 +1,60 @@
 #include "editor/editor.h"
 
+#include <Nexus/Log.h>
 #include <imgui.h>
 
 #include <cstdint>
+#include <cstdlib>
 
-#include "utils/file_dialog.h"
+#include "core/asset_manager.h"
+#include "core/project.h"
+#include "scene/components.h"
+#include "utils/filesystem.h"
 #include "utils/utils.h"
 
-Editor::Editor() : m_viewport_size(1280, 720) { m_framebuffer = std::make_shared<Framebuffer>(1280, 720); }
+Editor::Editor() : m_viewport_size(1280, 720) { init(); }
 
-void Editor::init() {}
+Editor::Editor(const std::vector<std::string>& args) : m_viewport_size(1280, 720) {
+  init();
+  if (!args.empty()) {
+    Project::load(args[0]);
+    m_serializer.deserialize(Project::getConfig().start_scene);
+  }
+}
+
+void Editor::init() {
+  m_framebuffer = std::make_shared<Framebuffer>(1280, 720);
+  m_active_scene = std::make_shared<Scene>();
+  m_serializer.setContext(m_active_scene);
+  m_scene_hierarchy_panel.setContext(m_active_scene);
+  Nexus::Logger::setCallback([](Nexus::LogLevel level, const std::string& message) {
+    ConsoleMessage::Level uiLevel;
+    switch (level) {
+      case Nexus::LogLevel::Trace:
+        uiLevel = ConsoleMessage::Level::Trace;
+        break;
+      case Nexus::LogLevel::Debug:
+        uiLevel = ConsoleMessage::Level::Debug;
+        break;
+      case Nexus::LogLevel::Info:
+        uiLevel = ConsoleMessage::Level::Info;
+        break;
+      case Nexus::LogLevel::Warn:
+        uiLevel = ConsoleMessage::Level::Warn;
+        break;
+      case Nexus::LogLevel::Error:
+        uiLevel = ConsoleMessage::Level::Error;
+        break;
+      case Nexus::LogLevel::Critical:
+        uiLevel = ConsoleMessage::Level::Fatal;
+        break;
+      case Nexus::LogLevel::Off:
+        break;
+    }
+
+    ConsolePanel::pushMessage(uiLevel, message);
+  });
+}
 
 void Editor::setContext(const std::shared_ptr<Scene>& scene) {
   m_active_scene = scene;
@@ -37,24 +82,50 @@ void Editor::onUpdate(float dt) {
 void Editor::onImGuiRender() {
   ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
-  drawDockspace();
-  drawViewport();
+  if (Project::hasProject()) {
+    static bool was_focused = true;
+    bool is_focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow);
+    if (is_focused && !was_focused) {
+      AssetManager::syncFileSystem();
+    }
+    was_focused = is_focused;
+    handleShortcuts();
+
+    drawDockspace();
+    drawViewport();
+  } else {
+    ImGui::Begin("Open/create Project");
+    if (ImGui::Button("Open")) {
+      Project::load();
+      m_serializer.deserialize(FileSystem::resolvePath(Project::getConfig().start_scene));
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("New")) {
+      Project::New();
+    }
+    ImGui::End();
+  }
 }
 
 void Editor::drawDockspace() {
   ImGui::BeginMainMenuBar();
   if (ImGui::BeginMenu("File")) {
-    if (ImGui::MenuItem("Open scene")) {
-      m_serializer.deserialize(FileDialog::openFile());
+    if (ImGui::MenuItem("Open Project")) {
+      Project::load();
+      m_serializer.deserialize(FileSystem::resolvePath(Project::getConfig().start_scene));
     }
-    if (ImGui::MenuItem("Save scene")) {
-      m_serializer.serialize(FileDialog::saveFile());
+    if (ImGui::MenuItem("Save Project")) {
+      Project::save();
+      m_serializer.serialize(Project::getConfig().start_scene);
     }
     ImGui::EndMenu();
   }
   ImGui::EndMainMenuBar();
 
-  m_scene_hierarchy_panel.onImGuiRender();
+  m_scene_hierarchy_panel.onImGuiRender(m_selection_context);
+  m_asset_browser_panel.onImGuiRender(m_selection_context);
+  m_properties_panel.onImGuiRender(m_selection_context);
+  m_console_panel.onImGuiRender();
 }
 
 void Editor::drawViewport() {
@@ -70,8 +141,34 @@ void Editor::drawViewport() {
   }
 
   uint32_t texture_id = m_framebuffer->getTexture();
+  // NOLINTNEXTLINE
   ImGui::Image(reinterpret_cast<void*>(texture_id), viewport_panel_size, ImVec2(0, 1), ImVec2(1, 0));
 
   ImGui::End();
   ImGui::PopStyleVar();
+}
+
+void Editor::handleShortcuts() {
+  auto& io = ImGui::GetIO();
+  if (io.WantTextInput) return;
+
+  if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S)) {
+    Project::save();
+  }
+  if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O)) {
+    Project::load();
+  }
+  if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_N)) {
+    Project::New();
+  }
+  if (ImGui::IsKeyPressed(ImGuiKey_F)) {
+    // Focus on selected object
+    if (std::holds_alternative<Entity>(m_selection_context)) {
+      auto entity = std::get<Entity>(m_selection_context);
+      if (entity) {
+        auto tc = entity.getComponent<TransformComponent>();
+        m_editor_camera.focusEntity(tc.Translation, glm::compMax(tc.Scale) * 5);
+      }
+    }
+  }
 }

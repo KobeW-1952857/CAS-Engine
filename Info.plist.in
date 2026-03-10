@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>${MACOSX_BUNDLE_EXECUTABLE_NAME}</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.yourname.CASEngine</string>
+    <key>CFBundleName</key>
+    <string>${MACOSX_BUNDLE_BUNDLE_NAME}</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>CASEngine needs access to open and save your project files.</string>
+    <key>NSDocumentsFolderUsageDescription</key>
+    <string>CASEngine needs access to open and save your project files.</string>
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>CASEngine needs access to open and save your project files.</string>
+</dict>
+</plist>

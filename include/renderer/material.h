@@ -1,6 +1,8 @@
 #pragma once
 
+#include <filesystem>
 #include <glm/glm.hpp>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <variant>
@@ -12,12 +14,15 @@ using MaterialProperty = std::variant<int, float, glm::vec2, glm::vec3, glm::vec
 
 class Material : public Asset {
  public:
-  Material() { type = AssetType::Material; };
+  Material();
   Material(std::shared_ptr<Shader> shader);
+
+  static std::shared_ptr<Material> load(const std::string& filepath);
 
   template <typename T>
   void setProperty(const std::string& name, const T& value) {
     m_properties[name] = value;
+    modified = true;
   }
 
   template <typename T>
@@ -43,6 +48,8 @@ class Material : public Asset {
   std::shared_ptr<Texture> getTexture(const std::string& name) const;
 
   void bind() const;
+
+  void serialize(const std::filesystem::path& filepath) const override;
 
  public:
   std::shared_ptr<Shader> shader;

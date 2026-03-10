@@ -1,0 +1,6 @@
+Material:
+  ShaderHandle: 3
+  Properties:
+    - Name: u_color
+      Type: vec4
+      Value: [0.8627451, 0.29604, 0.29604, 1]

@@ -43,7 +43,7 @@ struct TransformComponent {
 
 struct MeshComponent {
   static constexpr std::string name = "Mesh";
-  UUID mesh_handle = 3;
+  UUID mesh_handle = 1;
 
   MeshComponent() = default;
 };

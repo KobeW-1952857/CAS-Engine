@@ -17,6 +17,7 @@ class Scene : public std::enable_shared_from_this<Scene> {
 
   Entity createEntity(const std::string& name = "");
   Entity createEntity(UUID id, const std::string& name = "");
+  void destroyEntity(Entity entity);
 
   void onUpdate(float dt);
   void onRender(const glm::mat4& view_proj);

@@ -3,54 +3,11 @@
 #include <fstream>
 
 #include "Nexus/Log.h"
-#include "core/asset_manager.h"
 #include "core/uuid.h"
 #include "scene/components.h"
 #include "scene/entity.h"
 #include "scene/scene.h"
-
-namespace YAML {
-template <>
-struct convert<UUID> {
-  static Node encode(const UUID& uuid) {
-    Node node;
-    node = (uint64_t)uuid;
-    return node;
-  }
-
-  static bool decode(const Node& node, UUID& uuid) {
-    if (!node.IsScalar()) return false;
-    uuid = node.as<uint64_t>();
-    return true;
-  }
-};
-
-template <>
-struct convert<glm::vec3> {
-  static Node encode(const glm::vec3& vec) {
-    Node node;
-    node.push_back(vec.x);
-    node.push_back(vec.y);
-    node.push_back(vec.z);
-    node.SetStyle(EmitterStyle::Flow);
-    return node;
-  }
-
-  static bool decode(const Node& node, glm::vec3& vec) {
-    if (!node.IsSequence() || node.size() != 3) return false;
-    vec.x = node[0].as<float>();
-    vec.y = node[1].as<float>();
-    vec.z = node[2].as<float>();
-    return true;
-  }
-};
-
-Emitter& operator<<(Emitter& out, const glm::vec3& v) {
-  out << Flow << BeginSeq << v.x << v.y << v.z << EndSeq;
-  return out;
-}
-
-}  // namespace YAML
+#include "utils/yaml_extension.h"
 
 bool SceneSerializer::deserialize(const std::string& filepath) {
   YAML::Node data;
@@ -69,10 +26,8 @@ bool SceneSerializer::deserialize(const std::string& filepath) {
   m_scene->m_registry.clear();
   m_scene->m_entity_map.clear();
 
-  AssetManager::deserialize(data);
-
   std::string sceneName = data["Scene"].as<std::string>();
-  Nexus::Logger::info("Deserializing scene '{}'", sceneName);
+  Nexus::Logger::debug("Deserializing scene '{}'", sceneName);
 
   auto entities = data["Entities"];
   if (entities) {
@@ -85,7 +40,7 @@ bool SceneSerializer::deserialize(const std::string& filepath) {
         name = tagComponent["Tag"].as<std::string>();
       }
 
-      Nexus::Logger::debug("Deserializing entity with ID = {}, Name = {}", uuid, name);
+      Nexus::Logger::trace("Deserializing entity with ID = {}, Name = {}", uuid, name);
       Entity deserializedEntity = m_scene->createEntity(uuid, name);
 
       auto transformComponent = entity["TransformComponent"];
@@ -109,7 +64,7 @@ bool SceneSerializer::deserialize(const std::string& filepath) {
     }
   }
 
-  Nexus::Logger::info("Successfully deserialized scene '{}'", sceneName);
+  Nexus::Logger::debug("Successfully deserialized scene '{}'", sceneName);
   return true;
 }
 
@@ -118,10 +73,11 @@ void SceneSerializer::serialize(const std::string& filepath) {
     Nexus::Logger::error("No scene to serialize");
     return;
   }
+  Nexus::Logger::debug("Serializing scene to '{}", filepath);
 
   YAML::Emitter out;
   out << YAML::BeginMap;
-  AssetManager::serialize(out);
+
   out << YAML::Key << "Scene" << YAML::Value << "Untitled scene";
 
   out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;

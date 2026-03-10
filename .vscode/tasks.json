@@ -1,0 +1,74 @@
+{
+	// See https://go.microsoft.com/fwlink/?LinkId=733558
+	// for the documentation about the tasks.json format
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Clang-Tidy: Run on Project",
+			"type": "shell",
+			"command": "/opt/homebrew/opt/llvm/bin/clang-tidy",
+			"args": [
+				"-p",
+				"${workspaceFolder}/build",
+				"${workspaceFolder}/src/**/*.cpp",
+				"${workspaceFolder}/include/**/*.h"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"problemMatcher": {
+				"owner": "cpp",
+				"fileLocation": ["absolute"],
+				"pattern": {
+					"regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)\\s+(.*)$",
+					"file": 1,
+					"line": 2,
+					"column": 3,
+					"severity": 4,
+					"message": 5,
+					"code": 6
+				}
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			}
+		},
+		{
+			"label": "Build CASEngine",
+			"type": "shell",
+			"command": "cmake",
+			"args": [
+				"--build",
+				"${workspaceFolder}/build",
+				"--config",
+				"debug",
+				"-j",
+				"14"
+			],
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"presentation": {
+				"reveal": "silent",
+				"panel": "shared",
+				"clear": false
+			},
+			"problemMatcher": {
+				"owner": "cpp",
+				"fileLocation": ["absolute"],
+				"pattern": {
+					"regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)\\s+(.*)$",
+					"file": 1,
+					"line": 2,
+					"column": 3,
+					"severity": 4,
+					"message": 5,
+					"code": 6
+				}
+			}
+		}
+	]
+}

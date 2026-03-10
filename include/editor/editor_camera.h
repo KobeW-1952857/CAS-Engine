@@ -8,6 +8,7 @@ class EditorCamera {
   EditorCamera(float fov, float aspect_ratio, float near_clip, float far_clip);
 
   void onUpdate(float dt);
+  void focusEntity(const glm::vec3& position, const float distance);
   void setViewportSize(float width, float height);
 
   const glm::mat4& getViewMatrix() const { return m_view; }

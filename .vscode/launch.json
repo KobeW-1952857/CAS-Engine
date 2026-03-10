@@ -7,14 +7,11 @@
 		{
 			"type": "lldb",
 			"request": "launch",
-			"name": "Debug Planets",
-			"program": "${workspaceFolder}/build/Planets",
-			"args": [],
+			"name": "Debug CASEngine",
+			"program": "${workspaceFolder}/build/CASEngine.app",
+			"args": ["${workspaceFolder}/test_project/test.cproj"],
 			"cwd": "${workspaceFolder}",
-			"preLaunchTask": "Build Planets",
-			"env": {
-				"FPATH": ""
-			}
+			"preLaunchTask": "Build CASEngine"
 		}
 	]
 }

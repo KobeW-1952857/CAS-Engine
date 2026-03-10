@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(Planets CXX)
+project(CASEngine CXX)
 
 find_package(Nexus REQUIRED)
 
@@ -15,14 +15,18 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(yaml-cpp)
 
-add_executable(Planets
+add_executable(CASEngine
 	src/core/asset_manager.cpp
     src/core/input.cpp
+    src/core/project.cpp
     src/core/resource_manager.cpp
     src/core/uuid.cpp
-    src/editor/scene_hierarchy.cpp
-    src/editor/editor_camera.cpp
     src/editor/editor.cpp
+    src/editor/editor_camera.cpp
+    src/editor/panels/asset_browser.cpp
+    src/editor/panels/console.cpp
+    src/editor/panels/scene_hierarchy.cpp
+    src/editor/panels/properties.cpp
     src/main.cpp
     src/renderer/camera.cpp
     src/renderer/framebuffer.cpp
@@ -33,26 +37,52 @@ add_executable(Planets
     src/renderer/texture.cpp
     src/scene/scene.cpp
     src/scene/scene_serializer.cpp
-    # src/tmp/bezier_curve.cpp
-    # src/tmp/planet.cpp
     src/utils/file_dialog.mm
     src/utils/utils.cpp
 )
 
-set_target_properties(Planets PROPERTIES
+set_target_properties(CASEngine PROPERTIES
     CXX_STANDARD 20
     CXX_STANDARD_REQUIRED ON
+    MACOSX_BUNDLE TRUE
+    MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in"
 )
 
-target_compile_definitions(Planets PRIVATE GLM_ENABLE_EXPERIMENTAL)
-target_link_libraries(Planets PRIVATE Nexus::Nexus)
-target_link_libraries(Planets PRIVATE yaml-cpp::yaml-cpp)
-target_include_directories(Planets PUBLIC include vendor/stb/include vendor/tiny_obj/include vendor/EnTT/include)
+target_compile_definitions(CASEngine PRIVATE GLM_ENABLE_EXPERIMENTAL)
+target_link_libraries(CASEngine PRIVATE Nexus::Nexus)
+target_link_libraries(CASEngine PRIVATE yaml-cpp::yaml-cpp)
+target_link_libraries(CASEngine PUBLIC "-framework Cocoa" "-framework UniformTypeIdentifiers")
+target_include_directories(CASEngine PUBLIC include vendor/stb/include vendor/tiny_obj/include vendor/EnTT/include)
 
 add_custom_target(clean-all
     COMMAND ${CMAKE_COMMAND} -E rm -rf 
         ${CMAKE_BINARY_DIR}/CMakeCache.txt
         ${CMAKE_BINARY_DIR}/CMakeFiles
-        ${CMAKE_BINARY_DIR}/Planets
+        ${CMAKE_BINARY_DIR}/CASEngine
     COMMENT "Removing build artifacts..."
 )
+
+
+file(GLOB_RECURSE ASSET_FILES CONFIGURE_DEPENDS "assets/*")
+
+if (APPLE)
+    set(ASSET_DEST_DIR "$<TARGET_BUNDLE_CONTENT_DIR:CASEngine>/Resources/assets")
+    add_custom_command(TARGET CASEngine POST_BUILD
+        COMMAND codesign --entitlements "${CMAKE_CURRENT_SOURCE_DIR}/Entitlements.plist" -f -s "-" $<TARGET_FILE:CASEngine>
+        COMMENT "Codesigning CASEngine with file access entitlements..."
+    )
+else()
+    set(ASSET_DEST_DIR "$<TARGET_FILE_DIR:CASEngine>/assets")
+endif()
+set(ASSET_STAMP "${CMAKE_CURRENT_BINARY_DIR}/assets.stamp")
+
+add_custom_command(
+    OUTPUT ${ASSET_STAMP}
+    DEPENDS ${ASSET_FILES}
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/assets ${ASSET_DEST_DIR}
+    COMMAND ${CMAKE_COMMAND} -E touch ${ASSET_STAMP}
+    COMMENT "Assets changed! Syncing to build directory..."
+)
+
+add_custom_target(SyncAssets ALL DEPENDS ${ASSET_STAMP})
+add_dependencies(CASEngine SyncAssets)

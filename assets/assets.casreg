@@ -1,0 +1,16 @@
+Assets:
+  - ID: 1
+    Type: 2
+    Filepath: engine://models/cube.obj
+    Default: true
+  - ID: 2
+    Type: 2
+    Filepath: engine://models/sphere.obj
+  - ID: 3
+    Type: 3
+    Filepath: engine://shaders/default
+    Default: true
+  - ID: 4
+    Type: 1
+    Filepath: engine//materials/unlit.casmat
+    Default: true

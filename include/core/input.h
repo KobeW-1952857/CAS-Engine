@@ -10,6 +10,4 @@ class Input {
   static glm::vec2 getMousePosition();
   static float getMouseX();
   static float getMouseY();
-
- private:
 };

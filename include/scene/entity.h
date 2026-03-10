@@ -28,7 +28,7 @@ class Entity {
 
   operator bool() const { return m_handle != entt::null; }
   operator entt::entity() const { return m_handle; }
-  operator uint32_t() const { return (uint32_t)m_handle; }
+  operator uint32_t() const { return static_cast<uint32_t>(m_handle); }
 
   bool operator==(const Entity& other) const { return m_handle == other.m_handle; }
   bool operator!=(const Entity& other) const { return !(*this == other); }

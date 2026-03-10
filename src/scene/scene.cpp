@@ -22,6 +22,14 @@ Entity Scene::createEntity(UUID id, const std::string& name) {
   return entity;
 }
 
+void Scene::destroyEntity(Entity entity) {
+  if (!entity) return;
+
+  UUID id = entity.getComponent<IDComponent>().ID;
+  m_registry.destroy(entity);
+  m_entity_map.erase(id);
+}
+
 void Scene::onRender(const glm::mat4& view_proj) {
   {
     auto view = m_registry.view<TransformComponent, MaterialComponent, MeshComponent>();
