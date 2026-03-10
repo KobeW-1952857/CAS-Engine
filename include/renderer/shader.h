@@ -51,6 +51,7 @@ class Shader : public Asset {
  private:
   std::unordered_map<ShaderStage, GLuint> m_stageIds;
   std::unordered_map<ShaderStage, std::string> m_stagePaths;
+  mutable std::unordered_map<std::string, GLint> m_uniformLocationCache;
 
   bool m_isLinked = false;
 
@@ -59,4 +60,5 @@ class Shader : public Asset {
   bool addShaderStage(ShaderStage stage, const char* sourceData);
   bool checkShaderCompileError(GLuint shader, ShaderStage type);
   bool checkProgramLinkError();
+  GLint getUniformLocation(const std::string& name) const;
 };
