@@ -99,13 +99,7 @@ std::shared_ptr<T> AssetManager::loadAsset(UUID handle) {
   } else if constexpr (std::is_same_v<T, Mesh>) {
     asset = std::make_shared<Mesh>(path.string());
   } else if constexpr (std::is_same_v<T, Shader>) {
-    // TODO(kobe): make it modular for different types of shaders
-    std::string vertPath = path.string() + ".vert";
-    std::string fragPath = path.string() + ".frag";
-    asset = std::make_shared<Shader>();
-    asset->addStage(ShaderStage::Vertex, vertPath);
-    asset->addStage(ShaderStage::Fragment, fragPath);
-    asset->compile();
+    asset = std::make_shared<Shader>(path);
   } else if constexpr (std::is_same_v<T, Material>) {
     asset = Material::load(path.string());
   }

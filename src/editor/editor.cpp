@@ -139,7 +139,7 @@ void Editor::drawDockspace() {
   }
   ImGui::EndMainMenuBar();
 
-  drawDebugPanel();
+  // drawDebugPanel();
 
   m_scene_hierarchy_panel.onImGuiRender(m_selection_context);
   m_asset_browser_panel.onImGuiRender(m_selection_context);

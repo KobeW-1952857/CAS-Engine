@@ -26,6 +26,7 @@ class Shader : public Asset {
     m_id = glCreateProgram();
     type = AssetType::Shader;
   };
+  Shader(const std::filesystem::path& path);
   Shader& operator=(Shader other);
   ~Shader();
 

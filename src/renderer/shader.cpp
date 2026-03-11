@@ -12,6 +12,24 @@
 
 bool Shader::compile() { return linkProgram(); }
 
+static const std::unordered_map<std::string, ShaderStage> extension_to_stage = {
+    {".vert", ShaderStage::Vertex},      {".frag", ShaderStage::Fragment},       {".geom", ShaderStage::Geometry},
+    {".tesc", ShaderStage::TessControl}, {".tese", ShaderStage::TessEvaluation},
+};
+
+Shader::Shader(const std::filesystem::path& path) {
+  type = AssetType::Shader;
+  m_id = glCreateProgram();
+
+  for (const auto& [ext, stage] : extension_to_stage) {
+    auto stage_path = path.parent_path() / (path.stem().string() + ext);
+    if (std::filesystem::exists(stage_path)) {
+      addStage(stage, stage_path);
+    }
+  }
+  linkProgram();
+}
+
 Shader::~Shader() { glDeleteProgram(m_id); }
 
 bool Shader::addStage(ShaderStage stage, const std::filesystem::path& path) {
