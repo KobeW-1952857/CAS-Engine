@@ -16,9 +16,8 @@ void Renderer::init() {
   s_outline_shader->compile();
 }
 
-void Renderer::beginScene(const glm::mat4& view_proj, const glm::vec2& viewport_size) {
-  s_scene_data.view_proj = view_proj;
-  s_scene_data.viewport_size = viewport_size;
+void Renderer::beginScene(SceneData scene_data) {
+  s_scene_data = scene_data;
 
   glEnable(GL_STENCIL_TEST);
   glStencilMask(0xFF);
@@ -42,10 +41,15 @@ void Renderer::submit(const std::shared_ptr<Mesh>& mesh, const std::shared_ptr<M
     glStencilFunc(GL_ALWAYS, 0, 0xFF);
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
   }
+  glm::vec3 light_offset = glm::vec3(1.5f, 2.0f, 0.0f);
+  glm::mat4 inv_view = glm::inverse(s_scene_data.view);
+  glm::vec3 light_pos = glm::vec3(inv_view * glm::vec4(light_offset, 1.0f));
 
-  material->setProperty("u_proj_view", s_scene_data.view_proj);
   material->setProperty("u_model", transform);
   material->setProperty("u_entity_id", entity_id);
+  material->setProperty("u_proj_view", s_scene_data.view_proj);
+  material->setProperty("u_view_pos", s_scene_data.cam_pos);
+  material->setProperty("u_light_pos", light_pos);
   material->bind();
   mesh->render();
 }

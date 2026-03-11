@@ -5,6 +5,7 @@
 
 #include "core/asset_manager.h"
 #include "core/uuid.h"
+#include "editor/editor_camera.h"
 #include "renderer/material.h"
 #include "renderer/renderer.h"
 #include "scene/components.h"
@@ -32,8 +33,13 @@ void Scene::destroyEntity(Entity entity) {
   m_entity_map.erase(id);
 }
 
-void Scene::onRender(const glm::mat4& view_proj, const glm::vec2& viewport_size, Entity selected_entity) {
-  Renderer::beginScene(view_proj, viewport_size);
+void Scene::onRender(Entity selected_entity, const EditorCamera& camera, const glm::vec2& viewport_size) {
+  Renderer::SceneData scene_data{.viewport_size = viewport_size,
+                                 .cam_pos = camera.getPosition(),
+                                 .view_proj = camera.getViewProjectionMatrix(),
+                                 .projection = camera.getProjectionMatrix(),
+                                 .view = camera.getViewMatrix()};
+  Renderer::beginScene(scene_data);
 
   auto view = m_registry.view<TransformComponent, MaterialComponent, MeshComponent>();
   for (auto entity : view) {

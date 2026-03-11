@@ -87,10 +87,9 @@ void Editor::onUpdate(float dt) {
   m_framebuffer->clearAttachment(1, -1);
 
   if (m_active_scene) {
-    glm::mat4 view_proj = m_editor_camera.getViewProjectionMatrix();
     Entity selected =
         std::holds_alternative<Entity>(m_selection_context) ? std::get<Entity>(m_selection_context) : Entity();
-    m_active_scene->onRender(view_proj, m_viewport_size, selected);
+    m_active_scene->onRender(selected, m_editor_camera, m_viewport_size);
   }
 
   m_framebuffer->unbind();

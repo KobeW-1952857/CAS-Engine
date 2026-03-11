@@ -2,6 +2,15 @@ Assets:
   - ID: 15127160040946736779
     Type: 4
     Filepath: project://assets/New Material.casmat
+  - ID: 13791123961452530115
+    Type: 4
+    Filepath: project://assets/lit_2.casmat
+  - ID: 4
+    Type: 1
+    Filepath: engine//materials/unlit.casmat
+  - ID: 17467985531564180736
+    Type: 4
+    Filepath: project://assets/lit_1.casmat
   - ID: 16899454287262494091
     Type: 4
     Filepath: project://assets/New Material copy.casmat

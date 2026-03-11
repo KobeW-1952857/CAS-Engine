@@ -10,6 +10,7 @@
 
 class Entity;
 class SceneHierarchy;
+class EditorCamera;
 
 class Scene : public std::enable_shared_from_this<Scene> {
  public:
@@ -20,7 +21,7 @@ class Scene : public std::enable_shared_from_this<Scene> {
   void destroyEntity(Entity entity);
 
   void onUpdate(float dt);
-  void onRender(const glm::mat4& view_proj, const glm::vec2& viewport_size, Entity selected_entity);
+  void onRender(Entity selected_entity, const EditorCamera& camera, const glm::vec2& viewport_size);
   void renderEntity(Entity entity, const glm::mat4& view_proj);
   void renderEntityOutline(Entity entity, const glm::mat4& view_proj);
   void onImGuiRender();

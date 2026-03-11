@@ -12,10 +12,17 @@
 #include "scene/components.h"
 #include "scene/entity.h"
 
-static void drawMaterial(const std::shared_ptr<Material>& material, const AssetMetadata& meta_data) {
+static void drawMaterial(const std::shared_ptr<Material>& material, AssetMetadata& meta_data) {
   auto shaders = AssetManager::getAssetsMetadataOfType<Shader>();
   auto& shader = material->shader;
   auto& current_meta = AssetManager::getAssetMetadata(shader->handle);
+
+  std::string material_name = meta_data.filepath.stem().string();
+  if (ImGui::InputText("##material_name", &material_name)) {
+    std::filesystem::path new_path = meta_data.filepath.parent_path() / (material_name + ".casmat");
+    std::filesystem::rename(meta_data.filepath, new_path);
+    meta_data.filepath = new_path;
+  }
 
   ImGui::Text("Shader");
   ImGui::SameLine();
@@ -36,7 +43,9 @@ static void drawMaterial(const std::shared_ptr<Material>& material, const AssetM
 
   auto uniforms = shader->getActiveUniforms();
   for (auto uniform : uniforms) {
-    if (uniform.name == "u_model" || uniform.name == "u_proj_view") continue;
+    if (uniform.name == "u_model" || uniform.name == "u_proj_view" || uniform.name == "u_view_pos" ||
+        uniform.name == "u_entity_id")
+      continue;
     ImGui::Text("%s", uniform.name.c_str());
     ImGui::SameLine();
     switch (uniform.type) {
@@ -78,7 +87,7 @@ void PropertiesPanel::onImGuiRender(SelectionContext& selection_context) {
     drawComponents(std::get<Entity>(selection_context));
   } else if (std::holds_alternative<UUID>(selection_context)) {
     auto id = std::get<UUID>(selection_context);
-    auto meta = AssetManager::getAssetMetadata(id);
+    auto& meta = AssetManager::getAssetMetadata(id);
 
     switch (meta.type) {
       case AssetType::Mesh: {

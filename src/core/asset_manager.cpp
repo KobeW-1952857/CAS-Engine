@@ -119,7 +119,7 @@ UUID AssetManager::getHandleFromPath(const std::filesystem::path& path) {
   return UUID(0);
 }
 
-const AssetMetadata& AssetManager::getAssetMetadata(UUID handle) { return s_asset_registry[handle]; }
+AssetMetadata& AssetManager::getAssetMetadata(UUID handle) { return s_asset_registry[handle]; }
 
 void AssetManager::syncFileSystem() {
   auto project_path = Project::getProjectPath();

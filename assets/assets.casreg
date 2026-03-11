@@ -11,9 +11,13 @@ Assets:
     Filepath: engine://shaders/default
     Default: true
   - ID: 4
-    Type: 1
-    Filepath: engine//materials/unlit.casmat
-    Default: true
+    Type: 4
+    Filepath: engine://materials/unlit.casmat
   - ID: 5
     Type: 3
-    Filepath: engine://shaders/mrt
+    Filepath: engine://shaders/lit
+  - ID: 6
+    Type: 4
+    Filepath: engine://materials/lit.casmat
+    Default: true
+

@@ -1,0 +1,21 @@
+Material:
+  ShaderHandle: 5
+  Properties:
+    - Name: uShininess
+      Type: float
+      Value: 32
+    - Name: u_light_pos
+      Type: vec3
+      Value: [12.80468, 11.367565, 18.297298]
+    - Name: uObjectColor
+      Type: vec3
+      Value: [0.8, 0.8, 0.8]
+    - Name: uSpecularStrength
+      Type: float
+      Value: 0
+    - Name: uLightColor
+      Type: vec3
+      Value: [1, 1, 1]
+    - Name: uAmbientStrength
+      Type: float
+      Value: 0.1

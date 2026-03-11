@@ -26,7 +26,7 @@ class AssetManager {
   template <typename T>
   static std::unordered_map<UUID, AssetMetadata> getAssetsMetadataOfType();
   static UUID getHandleFromPath(const std::filesystem::path& path);
-  static const AssetMetadata& getAssetMetadata(UUID handle);
+  static AssetMetadata& getAssetMetadata(UUID handle);
 
   template <typename T>
   static std::shared_ptr<T> getAsset(UUID handle);
