@@ -12,6 +12,35 @@
 #include "scene/components.h"
 #include "scene/entity.h"
 
+static std::string formatUniformName(const std::string& name) {
+  // Strip leading 'u_' (snake_case) or 'u' (camelCase)
+  std::string s = name;
+  if (s.size() > 2 && s[0] == 'u' && s[1] == '_')
+    s = s.substr(2);
+  else if (s.size() > 1 && s[0] == 'u' && std::isupper(s[1]))
+    s = s.substr(1);
+
+  // Convert snake_case and camelCase to "Title Case With Spaces"
+  std::string result;
+  bool capitalize_next = true;
+  for (char c : s) {
+    if (c == '_') {
+      result += ' ';
+      capitalize_next = true;
+    } else if (std::isupper(c) && !result.empty() && result.back() != ' ') {
+      result += ' ';
+      result += c;
+      capitalize_next = false;
+    } else if (capitalize_next) {
+      result += static_cast<char>(std::toupper(c));
+      capitalize_next = false;
+    } else {
+      result += c;
+    }
+  }
+  return result;
+}
+
 static void drawMaterial(const std::shared_ptr<Material>& material, AssetMetadata& meta_data) {
   auto shaders = AssetManager::getAssetsMetadataOfType<Shader>();
   auto& shader = material->shader;
@@ -43,38 +72,45 @@ static void drawMaterial(const std::shared_ptr<Material>& material, AssetMetadat
 
   auto uniforms = shader->getActiveUniforms();
   for (auto uniform : uniforms) {
-    if (uniform.name == "u_model" || uniform.name == "u_proj_view" || uniform.name == "u_view_pos" ||
-        uniform.name == "u_entity_id")
-      continue;
-    ImGui::Text("%s", uniform.name.c_str());
+    ImGui::Text("%s", formatUniformName(uniform.name).c_str());
     ImGui::SameLine();
+
+    auto label = std::format("##{}", uniform.name);
+
     switch (uniform.type) {
       case GL_INT: {
         auto val = material->getPropertyOrDefault(uniform.name, 0);
-        if (ImGui::DragInt(std::format("##{}", uniform.name).c_str(), &val)) material->setProperty(uniform.name, val);
+        if (ImGui::DragInt(label.c_str(), &val)) material->setProperty(uniform.name, val);
         break;
       }
       case GL_FLOAT: {
         auto val = material->getPropertyOrDefault(uniform.name, 0.0f);
-        if (ImGui::DragFloat(std::format("##{}", uniform.name).c_str(), &val)) material->setProperty(uniform.name, val);
+        if (ImGui::DragFloat(label.c_str(), &val)) material->setProperty(uniform.name, val);
         break;
       }
       case GL_FLOAT_VEC2: {
         auto val = material->getPropertyOrDefault(uniform.name, glm::vec2(0.0f));
-        if (ImGui::DragFloat2(std::format("##{}", uniform.name).c_str(), glm::value_ptr(val)))
-          material->setProperty(uniform.name, val);
+        if (ImGui::DragFloat2(label.c_str(), glm::value_ptr(val))) material->setProperty(uniform.name, val);
         break;
       }
       case GL_FLOAT_VEC3: {
         auto val = material->getPropertyOrDefault(uniform.name, glm::vec3(0.0f));
-        if (ImGui::DragFloat3(std::format("##{}", uniform.name).c_str(), glm::value_ptr(val)))
-          material->setProperty(uniform.name, val);
+        bool is_color = uniform.name.find("olor") != std::string::npos;
+        if (is_color) {
+          if (ImGui::ColorEdit3(label.c_str(), glm::value_ptr(val))) material->setProperty(uniform.name, val);
+        } else {
+          if (ImGui::DragFloat3(label.c_str(), glm::value_ptr(val))) material->setProperty(uniform.name, val);
+        }
         break;
       }
       case GL_FLOAT_VEC4: {
         auto val = material->getPropertyOrDefault(uniform.name, glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-        if (ImGui::ColorEdit4(std::format("##{}", uniform.name).c_str(), glm::value_ptr(val)))
-          material->setProperty(uniform.name, val);
+        bool is_color = uniform.name.find("olor") != std::string::npos;
+        if (is_color) {
+          if (ImGui::ColorEdit4(label.c_str(), glm::value_ptr(val))) material->setProperty(uniform.name, val);
+        } else {
+          if (ImGui::DragFloat4(label.c_str(), glm::value_ptr(val))) material->setProperty(uniform.name, val);
+        }
         break;
       }
     }

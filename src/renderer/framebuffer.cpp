@@ -5,6 +5,8 @@
 
 #include <cassert>
 
+#include "utils/utils.h"
+
 namespace {
 
 bool IsDepthFormat(FramebufferTextureFormat format) {

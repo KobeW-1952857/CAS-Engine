@@ -40,22 +40,31 @@ void Scene::onRender(Entity selected_entity, const EditorCamera& camera, const g
                                  .projection = camera.getProjectionMatrix(),
                                  .view = camera.getViewMatrix()};
   Renderer::beginScene(scene_data);
-
   auto view = m_registry.view<TransformComponent, MaterialComponent, MeshComponent>();
+
+  Renderer::beginColorPass();
   for (auto entity : view) {
     Entity e(entity, shared_from_this());
     auto mesh = AssetManager::getAsset<Mesh>(e.getComponent<MeshComponent>().mesh_handle);
     auto material = AssetManager::getAsset<Material>(e.getComponent<MaterialComponent>().material_handle);
-    bool is_selected = (e == selected_entity);
+    auto transform = e.getComponent<TransformComponent>().getTransform();
 
-    Renderer::submit(mesh, material, e.getComponent<TransformComponent>().getTransform(), static_cast<int>(entity),
-                     is_selected);
+    Renderer::submit(mesh, material, transform, e == selected_entity);
   }
 
   if (selected_entity) {
     auto& tc = selected_entity.getComponent<TransformComponent>();
     auto mesh = AssetManager::getAsset<Mesh>(selected_entity.getComponent<MeshComponent>().mesh_handle);
     Renderer::submitOutline(mesh, tc.getTransform());
+  }
+
+  Renderer::beginEntityIDPass();
+  for (auto entity : view) {
+    Entity e(entity, shared_from_this());
+    auto mesh = AssetManager::getAsset<Mesh>(e.getComponent<MeshComponent>().mesh_handle);
+    auto transform = e.getComponent<TransformComponent>().getTransform();
+
+    Renderer::submitEntityID(mesh, transform, static_cast<int>(static_cast<uint32_t>(e)));
   }
 
   Renderer::endScene();

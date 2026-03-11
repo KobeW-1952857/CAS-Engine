@@ -78,7 +78,6 @@ void Material::serialize(const std::filesystem::path& filepath) const {
 
   out << YAML::Key << "Properties" << YAML::Value << YAML::BeginSeq;
   for (const auto& [name, prop] : m_properties) {
-    if (name == "u_model" || name == "u_proj_view" || name == "u_view_pos" || name == "u_entity_id") continue;
     out << YAML::BeginMap;
     out << YAML::Key << "Name" << YAML::Value << name;
 

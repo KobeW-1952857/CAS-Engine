@@ -80,9 +80,9 @@ void Editor::onUpdate(float dt) {
     m_editor_camera.onUpdate(dt);
   }
 
-  m_framebuffer->bind();
   m_framebuffer->resize(static_cast<uint32_t>(m_viewport_size.x), static_cast<uint32_t>(m_viewport_size.y));
 
+  m_framebuffer->bind();
   m_framebuffer->clear({0.1f, 0.1f, 0.1f, 1.0f});
   m_framebuffer->clearAttachment(1, -1);
 
@@ -194,6 +194,7 @@ void Editor::handleShortcuts() {
 
   if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S)) {
     Project::save();
+    m_serializer.serialize(Project::getConfig().start_scene);
   }
   if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O)) {
     Project::load();
@@ -219,7 +220,7 @@ void Editor::drawDebugPanel() {
   ImVec2 size(256, 144);
   uint32_t debug_tex = m_framebuffer->getDebugEntityIDTextureID();
   ImGui::Text("Entity ID buffer");
-  ImGui::Image(reinterpret_cast<void*>(debug_tex), size, ImVec2(0, 1), ImVec2(1, 0));
+  ImGui::Image(reinterpret_cast<ImTextureID>(debug_tex), size, ImVec2(0, 1), ImVec2(1, 0));
 
   // Legend
   ImGui::Separator();

@@ -1,10 +1,9 @@
 #version 410 core
+#include "engine/uniforms.glsl"
+
 layout(location = 0) in vec3 a_Position;
 layout(location = 4) in vec3 a_Normal;
 
-uniform mat4 u_proj_view;
-uniform mat4 u_model;
-uniform vec2 u_viewport_size;
 uniform float u_outline_width;
 
 void main() {

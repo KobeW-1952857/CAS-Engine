@@ -5,9 +5,12 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <sstream>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 
+#include "utils/filesystem.h"
 #include "utils/utils.h"
 
 bool Shader::compile() { return linkProgram(); }
@@ -32,9 +35,53 @@ Shader::Shader(const std::filesystem::path& path) {
 
 Shader::~Shader() { glDeleteProgram(m_id); }
 
+static std::string preprocessIncludes(const std::string& source, const std::filesystem::path& shader_dir,
+                                      std::unordered_set<std::string>& visited) {
+  std::string result;
+  std::istringstream stream(source);
+  std::string line;
+
+  while (std::getline(stream, line)) {
+    auto hash = line.find("#include");
+    if (hash != std::string::npos) {
+      auto start = line.find('"', hash);
+      auto end = line.rfind('"');
+      if (start != std::string::npos && start != end) {
+        std::string inc = line.substr(start + 1, end - start - 1);
+
+        std::filesystem::path resolved;
+        if (inc.starts_with("engine://") || inc.starts_with("project://")) {
+          resolved = FileSystem::resolvePath(inc);
+        } else {
+          auto rel = shader_dir / inc;
+          resolved = std::filesystem::exists(rel) ? rel : FileSystem::resolvePath("engine://shaders/" + inc);
+        }
+
+        auto key = resolved.string();
+        if (!visited.contains(key) && std::filesystem::exists(resolved)) {
+          visited.insert(key);
+          result += preprocessIncludes(readFile(resolved.c_str()), resolved.parent_path(), visited);
+        } else if (!std::filesystem::exists(resolved)) {
+          Nexus::Logger::error("Shader include not found: {}", inc);
+        }
+        continue;
+      }
+    }
+
+    result += line + "\n";
+  }
+  return result;
+}
+
 bool Shader::addStage(ShaderStage stage, const std::filesystem::path& path) {
   m_stagePaths[stage] = path;
-  if (!m_isLinked) return addShaderStage(stage, readFile(path.c_str()).c_str());
+  if (!m_isLinked) {
+    auto source = readFile(path.c_str());
+    auto visited = std::unordered_set<std::string>{path.string()};
+    source = preprocessIncludes(source, path.parent_path(), visited);
+
+    return addShaderStage(stage, source.c_str());
+  }
 
   Nexus::Logger::debug("Shader stage [{}] queued - call relink() to apply", stageName(stage));
   return true;
@@ -89,10 +136,14 @@ std::vector<UniformInfo> Shader::getActiveUniforms() const {
   GLchar name_buffer[buf_size];
 
   for (GLint i = 0; i < numUniforms; ++i) {
+    // Skip uniforms that belong to a UBO block
+    GLint block_index;
+    glGetActiveUniformsiv(m_id, 1, reinterpret_cast<GLuint*>(&i), GL_UNIFORM_BLOCK_INDEX, &block_index);
+    if (block_index != -1) continue;
+
     UniformInfo uniform{};
     GLsizei length;
-
-    glGetActiveUniform(m_id, static_cast<GLuint>(i), 256, &length, &uniform.size, &uniform.type, name_buffer);
+    glGetActiveUniform(m_id, static_cast<GLuint>(i), buf_size, &length, &uniform.size, &uniform.type, name_buffer);
     uniform.name = std::string(name_buffer, length);
 
     uniforms.push_back(uniform);
@@ -213,6 +264,11 @@ bool Shader::linkProgram() {
   if (!checkProgramLinkError()) return false;
 
   for (auto& [stage, id] : m_stageIds) glDeleteShader(id);
+
+  GLuint idx = glGetUniformBlockIndex(m_id, "PerFrame");
+  if (idx != GL_INVALID_INDEX) glUniformBlockBinding(m_id, idx, 0);
+  idx = glGetUniformBlockIndex(m_id, "PerDraw");
+  if (idx != GL_INVALID_INDEX) glUniformBlockBinding(m_id, idx, 1);
 
   m_stageIds.clear();
   m_uniformLocationCache.clear();

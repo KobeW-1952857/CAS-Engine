@@ -1,5 +1,4 @@
 #version 410 core
-
 #include "engine/uniforms.glsl"
 
 layout(location = 0) in vec3 aPos;

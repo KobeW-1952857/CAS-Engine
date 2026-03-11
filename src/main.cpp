@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
   glDisable(GL_CULL_FACE);
   glViewport(0, 0, width, height);
 
-  // window->setVSync(true);
+  window->setVSync(false);
   window->onResize([&width, &height, &window](int new_width, int new_height) -> bool {
     glfwGetFramebufferSize(static_cast<GLFWwindow*>(window->getNativeWindow()), &width, &height);
 

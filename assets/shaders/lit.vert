@@ -1,10 +1,9 @@
 #version 410 core
+#include "engine/uniforms.glsl"
+
 layout(location = 0) in vec3 aPosition;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aTexCoord;
-
-uniform mat4 u_model;
-uniform mat4 u_proj_view;
 
 out vec3 vFragPos;
 out vec3 vNormal;
