@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <variant>
 
+#include "core/asset.h"
+#include "core/asset_traits.h"
 #include "shader.h"
 #include "texture.h"
 
@@ -17,7 +19,7 @@ using MaterialProperty = std::variant<int, float, glm::vec2, glm::vec3, glm::vec
 class Material : public Asset {
  public:
   Material();
-  Material(std::shared_ptr<Shader> shader);
+  explicit Material(std::shared_ptr<Shader> shader);
 
   static std::shared_ptr<Material> load(const std::string& filepath, AssetManager& assets);
 
@@ -60,4 +62,19 @@ class Material : public Asset {
  private:
   std::unordered_map<std::string, MaterialProperty> m_properties;
   std::unordered_map<std::string, std::shared_ptr<Texture>> m_textures;
+};
+
+template <>
+struct AssetTraits<Material> {
+  static constexpr AssetType type = AssetType::Material;
+  static constexpr const char* default_name = "New Material";
+  static constexpr const char* extension = ".casmat";
+
+  static bool matchesExtension(std::string_view ext) { return ext == extension; }
+
+  static std::shared_ptr<Material> load(const std::filesystem::path& path, AssetManager& assets) {
+    return Material::load(path.string(), assets);
+  }
+
+  static void initializeNew(Material& asset, AssetManager& assets);
 };

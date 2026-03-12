@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "core/asset.h"
+#include "core/asset_traits.h"
 
 class FileSystem;
 
@@ -64,4 +65,19 @@ class Shader : public Asset {
   bool checkShaderCompileError(GLuint shader, ShaderStage type);
   bool checkProgramLinkError();
   GLint getUniformLocation(const std::string& name) const;
+};
+
+template <>
+struct AssetTraits<Shader> {
+  static constexpr AssetType type = AssetType::Shader;
+  static constexpr const char* default_name = "New Shader";
+  static constexpr const char* extension = ".glsl";
+
+  static bool matchesExtension(std::string_view ext) {
+    return ext == ".glsl" || ext == ".vert" || ext == ".frag" || ext == ".geom" || ext == ".tesc" || ext == ".tese";
+  }
+
+  static std::shared_ptr<Shader> load(const std::filesystem::path& path, AssetManager& assets);
+
+  static void initializeNew(Shader& asset, AssetManager& assets) {}
 };

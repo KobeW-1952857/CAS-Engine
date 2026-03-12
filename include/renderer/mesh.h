@@ -5,6 +5,7 @@
 
 #include "Nexus/Window/GLFWWindow.h"
 #include "core/asset.h"
+#include "core/asset_traits.h"
 #include "utils/utils.h"
 
 struct Vertex {
@@ -41,4 +42,19 @@ class Mesh : public Asset {
   GLuint m_vao, m_vbo, m_ebo;
 
   void computeSmoothedNormals();
+};
+
+template <>
+struct AssetTraits<Mesh> {
+  static constexpr AssetType type = AssetType::Mesh;
+  static constexpr const char* default_name = "New Mesh";
+  static constexpr const char* extension = ".obj";
+
+  static bool matchesExtension(std::string_view ext) { return ext == extension; }
+
+  static std::shared_ptr<Mesh> load(const std::filesystem::path& path, AssetManager& assets) {
+    return std::make_shared<Mesh>(path.string());
+  }
+
+  static void initializeNew(Mesh& asset, AssetManager& assets) {}
 };

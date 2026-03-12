@@ -26,6 +26,7 @@ class AssetManager {
 
   template <typename T>
   std::vector<UUID> getAssetsOfType();
+
   template <typename T>
   std::unordered_map<UUID, AssetMetadata> getAssetsMetadataOfType();
   UUID getHandleFromPath(const std::filesystem::path& path);
@@ -45,9 +46,13 @@ class AssetManager {
 
   void syncFileSystem();
 
+  FileSystem& filesystem() { return m_filesystem; }
+
  private:
   template <typename T>
   std::shared_ptr<T> loadAsset(UUID handle);
+
+  AssetType getTypeFromExtension(std::string_view ext) const;
 
   template <typename T>
   static AssetType getAssetType();
