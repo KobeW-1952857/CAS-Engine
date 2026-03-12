@@ -78,6 +78,7 @@ struct AssetTraits<Shader> {
   }
 
   static std::shared_ptr<Shader> load(const std::filesystem::path& path, AssetManager& assets);
+  static void save(const Shader& asset, const std::filesystem::path& path, AssetManager& assets) {}
 
   static void initializeNew(Shader& asset, AssetManager& assets) {}
 };

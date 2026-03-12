@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -55,6 +56,7 @@ struct AssetTraits<Mesh> {
   static std::shared_ptr<Mesh> load(const std::filesystem::path& path, AssetManager& assets) {
     return std::make_shared<Mesh>(path.string());
   }
+  static void save(const Mesh& asset, const std::filesystem::path& path, AssetManager& assets) {}
 
   static void initializeNew(Mesh& asset, AssetManager& assets) {}
 };

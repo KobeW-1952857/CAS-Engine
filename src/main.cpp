@@ -15,6 +15,8 @@ int main(int argc, char** argv) {
   Nexus::Window::s_api = Nexus::Window::API::GLFW;
 
   auto window = Nexus::Window::create(Nexus::WindowProps("CAS Engine", 1280, 720));
+  ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
+  window->setVSync(true);
 
   int width, height;
   glfwGetFramebufferSize(static_cast<GLFWwindow*>(window->getNativeWindow()), &width, &height);

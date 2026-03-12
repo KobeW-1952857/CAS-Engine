@@ -8,6 +8,9 @@
 #include <unordered_set>
 
 #include "core/asset.h"
+#include "core/asset_manager.inl"
+#include "core/asset_traits.h"
+#include "core/asset_type_list.h"
 #include "core/project.h"
 #include "core/uuid.h"
 #include "utils/filesystem.h"
@@ -55,12 +58,23 @@ void AssetManager::serialize() {
 
 void AssetManager::saveAssets() {
   for (const auto& [id, asset] : s_loaded_assets) {
-    if (asset->modified) {
-      asset->modified = false;
-      auto meta = getAssetMetadata(id);
-      if (meta.is_engine_asset) continue;
-      asset->serialize(m_filesystem.resolvePath(meta.filepath));
-    }
+    if (!asset->modified) return;
+    const auto& meta = getAssetMetadata(id);
+
+    auto path = m_filesystem.resolvePath(meta.filepath);
+    bool saved = false;
+
+    detail::for_each_asset_type<AllAssetTypes>([&]<typename T>() {
+      if (saved || AssetTraits<T>::type != meta.type) return;
+      if (auto typed = std::dynamic_pointer_cast<T>(asset)) {
+        Nexus::Logger::debug("Saving asset {} of type {} to disk...", meta.filepath.string(),
+                             static_cast<uint8_t>(meta.type));
+        AssetTraits<T>::save(*typed, path, *this);
+        asset->modified = false;
+        saved = true;
+      }
+    });
+    if (!saved) Nexus::Logger::warn("No save handler for asset type {}", static_cast<uint8_t>(meta.type));
   }
 }
 
@@ -143,11 +157,7 @@ void AssetManager::syncFileSystem() {
     files_on_disk.insert(file_path);
     if (!path_to_uuid.contains(file_path)) {
       UUID new_id;
-      AssetType type = AssetType::None;
-      if (extension == ".casmat") type = AssetType::Material;
-      if (extension == ".obj") type = AssetType::Mesh;
-      if (extension == ".frag") type = AssetType::Shader;
-      if (extension == ".vert") type = AssetType::Shader;
+      AssetType type = getTypeFromExtension(extension);
 
       if (type == AssetType::None) continue;
 

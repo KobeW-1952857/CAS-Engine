@@ -30,6 +30,13 @@ class AssetManager;
 //     AssetManager& is provided so types like Material and Shader can resolve
 //     their own sub-asset handles (shaders, textures, etc.).
 //
+//   static void save(const T& asset, const std::filesystem::path& path,
+//                    AssetManager& assets)
+//     Persists an asset to disk. AssetManager& is provided so implementations
+//     can resolve sub-asset handles (e.g. a Material writing its shader UUID).
+//     For read-only asset types sourced from external formats (Mesh, Shader),
+//     leave the body empty — the engine does not own their on-disk format.
+//
 //   static void initializeNew(T& asset, AssetManager& assets)
 //     Called by AssetManager::createNewAsset<T>() after default-constructing
 //     the asset but before serializing it to disk. Use this to set up sensible

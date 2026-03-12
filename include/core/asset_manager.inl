@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Nexus/Log.h>
+
 #include <string>
 #include <string_view>
 
@@ -75,7 +77,8 @@ UUID AssetManager::createNewAsset(const std::filesystem::path& virtual_directory
   auto new_asset = std::make_shared<T>();
   AssetTraits<T>::initializeNew(*new_asset, *this);
 
-  new_asset->serialize(absolute_path);
+  // new_asset->serialize(absolute_path);
+  AssetTraits<T>::save(*new_asset, absolute_path, *this);
 
   UUID new_id;
   new_asset->handle = new_id;

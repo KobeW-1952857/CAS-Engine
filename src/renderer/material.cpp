@@ -14,57 +14,6 @@ Material::Material() { type = AssetType::Material; }
 
 Material::Material(std::shared_ptr<Shader> shader) : shader(std::move(shader)) { type = AssetType::Material; }
 
-std::shared_ptr<Material> Material::load(const std::string& filepath, AssetManager& assets) {
-  Nexus::Logger::trace("Loading material from {}...", filepath);
-  YAML::Node data;
-  try {
-    data = YAML::LoadFile(filepath);
-  } catch (const YAML::Exception& e) {
-    Nexus::Logger::error("Failed to load material file '{}'. Error: {}", filepath, e.what());
-    return nullptr;
-  }
-
-  auto matNode = data["Material"];
-  if (!matNode) {
-    Nexus::Logger::error("Invalid material file '{}': Missing 'Material' node.", filepath);
-    return nullptr;
-  }
-  auto shader_node = matNode["ShaderHandle"];
-  if (!shader_node) {
-    Nexus::Logger::error("Invalid material file '{}': Missing 'Shader' node.", filepath);
-    return nullptr;
-  }
-
-  auto material = std::make_shared<Material>();
-  material->shader = assets.getAsset<Shader>(shader_node.as<UUID>());
-
-  auto properties = matNode["Properties"];
-  if (!properties) return material;
-
-  for (const auto& prop : properties) {
-    std::string name = prop["Name"].as<std::string>();
-    std::string typeStr = prop["Type"].as<std::string>();
-
-    if (typeStr == "int") {
-      material->setProperty(name, prop["Value"].as<int>());
-    } else if (typeStr == "float") {
-      material->setProperty(name, prop["Value"].as<float>());
-    } else if (typeStr == "vec2") {
-      material->setProperty(name, prop["Value"].as<glm::vec2>());
-    } else if (typeStr == "vec3") {
-      material->setProperty(name, prop["Value"].as<glm::vec3>());
-    } else if (typeStr == "vec4") {
-      material->setProperty(name, prop["Value"].as<glm::vec4>());
-    } else if (typeStr == "mat4") {
-      material->setProperty(name, prop["Value"].as<glm::mat4>());
-    } else {
-      Nexus::Logger::warn("Unsupported material property type: {}", typeStr);
-    }
-  }
-  material->modified = false;
-  return material;
-}
-
 void Material::serialize(const std::filesystem::path& filepath) const {
   YAML::Emitter out;
   out << YAML::BeginMap;
@@ -162,4 +111,55 @@ void Material::resetProperties() {
   m_properties.clear();
   m_textures.clear();
   modified = true;
+}
+
+std::shared_ptr<Material> AssetTraits<Material>::load(const std::filesystem::path& path, AssetManager& assets) {
+  Nexus::Logger::trace("Loading material from {}...", path.string());
+  YAML::Node data;
+  try {
+    data = YAML::LoadFile(path);
+  } catch (const YAML::Exception& e) {
+    Nexus::Logger::error("Failed to load material file '{}'. Error: {}", path.string(), e.what());
+    return nullptr;
+  }
+
+  auto matNode = data["Material"];
+  if (!matNode) {
+    Nexus::Logger::error("Invalid material file '{}': Missing 'Material' node.", path.string());
+    return nullptr;
+  }
+  auto shader_node = matNode["ShaderHandle"];
+  if (!shader_node) {
+    Nexus::Logger::error("Invalid material file '{}': Missing 'Shader' node.", path.string());
+    return nullptr;
+  }
+
+  auto material = std::make_shared<Material>();
+  material->shader = assets.getAsset<Shader>(shader_node.as<UUID>());
+
+  auto properties = matNode["Properties"];
+  if (!properties) return material;
+
+  for (const auto& prop : properties) {
+    std::string name = prop["Name"].as<std::string>();
+    std::string typeStr = prop["Type"].as<std::string>();
+
+    if (typeStr == "int") {
+      material->setProperty(name, prop["Value"].as<int>());
+    } else if (typeStr == "float") {
+      material->setProperty(name, prop["Value"].as<float>());
+    } else if (typeStr == "vec2") {
+      material->setProperty(name, prop["Value"].as<glm::vec2>());
+    } else if (typeStr == "vec3") {
+      material->setProperty(name, prop["Value"].as<glm::vec3>());
+    } else if (typeStr == "vec4") {
+      material->setProperty(name, prop["Value"].as<glm::vec4>());
+    } else if (typeStr == "mat4") {
+      material->setProperty(name, prop["Value"].as<glm::mat4>());
+    } else {
+      Nexus::Logger::warn("Unsupported material property type: {}", typeStr);
+    }
+  }
+  material->modified = false;
+  return material;
 }

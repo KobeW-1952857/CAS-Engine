@@ -21,8 +21,6 @@ class Material : public Asset {
   Material();
   explicit Material(std::shared_ptr<Shader> shader);
 
-  static std::shared_ptr<Material> load(const std::string& filepath, AssetManager& assets);
-
   template <typename T>
   void setProperty(const std::string& name, const T& value) {
     m_properties[name] = value;
@@ -52,8 +50,7 @@ class Material : public Asset {
   std::shared_ptr<Texture> getTexture(const std::string& name) const;
 
   void bind() const;
-
-  void serialize(const std::filesystem::path& filepath) const override;
+  void serialize(const std::filesystem::path& filepath) const;
   void resetProperties();
 
  public:
@@ -72,8 +69,9 @@ struct AssetTraits<Material> {
 
   static bool matchesExtension(std::string_view ext) { return ext == extension; }
 
-  static std::shared_ptr<Material> load(const std::filesystem::path& path, AssetManager& assets) {
-    return Material::load(path.string(), assets);
+  static std::shared_ptr<Material> load(const std::filesystem::path& path, AssetManager& assets);
+  static void save(const Material& asset, const std::filesystem::path& path, AssetManager& assets) {
+    asset.serialize(path);
   }
 
   static void initializeNew(Material& asset, AssetManager& assets);

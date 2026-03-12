@@ -10,7 +10,7 @@ Entities:
     MeshComponent:
       MeshHandle: 2
     MaterialComponent:
-      MaterialHandle: 15127160040946736779
+      MaterialHandle: 6
   - ID: 13760195744637166698
     TagComponent:
       Tag: Entity 2

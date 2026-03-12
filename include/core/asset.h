@@ -1,8 +1,5 @@
 #pragma once
 
-#include <filesystem>
-
-#include "Nexus/Log.h"
 #include "core/uuid.h"
 enum class AssetType : uint8_t { None = 0, Texture, Mesh, Shader, Material };
 
@@ -12,9 +9,6 @@ class Asset {
   AssetType type;
   bool modified = false;
   virtual ~Asset() = default;
-  virtual void serialize(const std::filesystem::path& filepath) const {
-    Nexus::Logger::critical("Serializer for {} not implemented, but called", static_cast<uint8_t>(type));
-  }
 };
 
 namespace YAML {
