@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include "core/app_context.h"
 #include "editor/editor_camera.h"
 #include "editor/panels/asset_browser.h"
 #include "editor/panels/console.h"
@@ -29,7 +30,11 @@ class Editor {
   void init();
   void handleShortcuts();
 
+  std::shared_ptr<Scene> makeScene();
+
  private:
+  AppContext m_context;
+
   std::shared_ptr<Scene> m_active_scene;
   SceneSerializer m_serializer;
   EditorCamera m_editor_camera;

@@ -3,6 +3,9 @@
 #include <filesystem>
 #include <string>
 
+class FileSystem;
+class AssetManager;
+
 struct ProjectConfig {
   std::string name;
   std::filesystem::path path;
@@ -12,21 +15,28 @@ struct ProjectConfig {
 
 class Project {
  public:
-  static void load();
-  static void load(const std::filesystem::path& path);
-  static void save();
-  static void New();
+  Project(FileSystem& filesystem, AssetManager& assets) : m_filesystem(filesystem), m_assets(assets) {}
 
-  static ProjectConfig& getConfig() { return s_config; }
-  static std::filesystem::path getProjectPath() { return s_config.path; }
-  static std::filesystem::path getAssetsPath() { return s_config.path / "assets"; }
+  void load();
+  void load(const std::filesystem::path& path);
+  void save();
+  void New();
 
-  static bool hasProject() { return std::filesystem::exists(s_config.path / (s_config.name + ".cproj")); }
+  ProjectConfig& getConfig() { return m_config; }
+  const ProjectConfig& getConfig() const { return m_config; }
+  std::filesystem::path getProjectPath() const { return m_config.path; }
+  std::filesystem::path getAssetsPath() const { return m_config.path / "assets"; }
+
+  bool hasProject() const { return m_has_project; }
 
  private:
-  static bool serialize(const std::filesystem::path& path);
-  static bool deserialize(const std::filesystem::path& path);
+  bool serialize(const std::filesystem::path& path);
+  bool deserialize(const std::filesystem::path& path);
 
  private:
-  inline static ProjectConfig s_config = {};
+  ProjectConfig m_config = {};
+
+  FileSystem& m_filesystem;
+  AssetManager& m_assets;
+  bool m_has_project = false;
 };

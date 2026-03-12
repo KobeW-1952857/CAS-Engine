@@ -8,13 +8,15 @@
 
 #include "core/uuid.h"
 
-class Entity;
-class SceneHierarchy;
+class AssetManager;
 class EditorCamera;
+class Entity;
+class Renderer;
+class SceneHierarchy;
 
 class Scene : public std::enable_shared_from_this<Scene> {
  public:
-  Scene() = default;
+  Scene(AssetManager* assets, Renderer* renderer) : m_assets(assets), m_renderer(renderer) {}
 
   Entity createEntity(const std::string& name = "");
   Entity createEntity(UUID id, const std::string& name = "");
@@ -29,6 +31,8 @@ class Scene : public std::enable_shared_from_this<Scene> {
  private:
   entt::registry m_registry;
   std::unordered_map<UUID, Entity> m_entity_map;
+  AssetManager* m_assets = nullptr;
+  Renderer* m_renderer = nullptr;
 
   friend Entity;
   friend SceneHierarchy;

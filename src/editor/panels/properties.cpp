@@ -12,6 +12,8 @@
 #include "scene/components.h"
 #include "scene/entity.h"
 
+// --- Helpers --------------------------------------------------------------------------------------------------------
+
 static std::string formatUniformName(const std::string& name) {
   // Strip leading 'u_' (snake_case) or 'u' (camelCase)
   std::string s = name;
@@ -40,17 +42,39 @@ static std::string formatUniformName(const std::string& name) {
   }
   return result;
 }
+template <typename T, typename UIFunction>
+static void DrawComponent(Entity entity, UIFunction ui_function) {
+  if (!entity.hasComponent<T>()) return;
 
-static void drawMaterial(const std::shared_ptr<Material>& material, AssetMetadata& meta_data) {
-  auto shaders = AssetManager::getAssetsMetadataOfType<Shader>();
+  auto& component = entity.getComponent<T>();
+
+  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
+  ImGui::Separator();
+  ImGui::PushID(typeid(T).hash_code());
+  bool open = ImGui::TreeNodeEx("##Component", ImGuiTreeNodeFlags_DefaultOpen, "%s", T::name.c_str());
+  ImGui::PopID();
+  ImGui::PopStyleVar();
+
+  if (open) {
+    ui_function(component);
+    ImGui::TreePop();
+  }
+}
+
+// --- drawMaterial ---------------------------------------------------------------------------------------------------
+void PropertiesPanel::drawMaterial(const std::shared_ptr<Material>& material, AssetMetadata& meta_data) {
+  auto shaders = m_context.assets.getAssetsMetadataOfType<Shader>();
   auto& shader = material->shader;
-  auto& current_meta = AssetManager::getAssetMetadata(shader->handle);
+  auto& current_meta = m_context.assets.getAssetMetadata(shader->handle);
 
-  std::string material_name = meta_data.filepath.stem().string();
-  if (ImGui::InputText("##material_name", &material_name)) {
-    std::filesystem::path new_path = meta_data.filepath.parent_path() / (material_name + ".casmat");
-    std::filesystem::rename(meta_data.filepath, new_path);
-    meta_data.filepath = new_path;
+  // Rename
+  {
+    std::string material_name = meta_data.filepath.stem().string();
+    if (ImGui::InputText("##material_name", &material_name)) {
+      std::filesystem::path new_path = meta_data.filepath.parent_path() / (material_name + ".casmat");
+      std::filesystem::rename(meta_data.filepath, new_path);
+      meta_data.filepath = new_path;
+    }
   }
 
   ImGui::Text("Shader");
@@ -61,7 +85,7 @@ static void drawMaterial(const std::shared_ptr<Material>& material, AssetMetadat
       auto name = meta.filepath.filename().c_str();
 
       if (ImGui::Selectable(name, selected)) {
-        material->shader = AssetManager::getAsset<Shader>(id);
+        material->shader = m_context.assets.getAsset<Shader>(id);
         material->resetProperties();
       }
     }
@@ -117,59 +141,11 @@ static void drawMaterial(const std::shared_ptr<Material>& material, AssetMetadat
   }
 }
 
-void PropertiesPanel::onImGuiRender(SelectionContext& selection_context) {
-  ImGui::Begin("Properties");
-  if (std::holds_alternative<Entity>(selection_context)) {
-    drawComponents(std::get<Entity>(selection_context));
-  } else if (std::holds_alternative<UUID>(selection_context)) {
-    auto id = std::get<UUID>(selection_context);
-    auto& meta = AssetManager::getAssetMetadata(id);
-
-    switch (meta.type) {
-      case AssetType::Mesh: {
-        auto asset = AssetManager::getAsset<Mesh>(id);
-        break;
-      }
-      case AssetType::Material: {
-        auto asset = AssetManager::getAsset<Material>(id);
-        drawMaterial(asset, meta);
-        break;
-      }
-      case AssetType::Shader: {
-        auto asset = AssetManager::getAsset<Shader>(id);
-        break;
-      }
-      default:
-        break;
-    }
-
-  } else {
-    ImGui::Text("Nothing selected");
-  }
-  ImGui::End();
-}
-
-template <typename T, typename UIFunction>
-static void DrawComponent(Entity entity, UIFunction ui_function) {
-  if (!entity.hasComponent<T>()) return;
-
-  auto& component = entity.getComponent<T>();
-
-  ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
-  ImGui::Separator();
-  ImGui::PushID(typeid(T).hash_code());
-  bool open = ImGui::TreeNodeEx("##Component", ImGuiTreeNodeFlags_DefaultOpen, "%s", T::name.c_str());
-  ImGui::PopID();
-  ImGui::PopStyleVar();
-
-  if (open) {
-    ui_function(component);
-    ImGui::TreePop();
-  }
-}
+// --- drawComponents -------------------------------------------------------------------------------------------------
 
 void PropertiesPanel::drawComponents(Entity entity) {
   if (!entity) return;
+  auto& assets = m_context.assets;
 
   if (entity.hasComponent<TagComponent>()) {
     auto& tag = entity.getComponent<TagComponent>().Tag;
@@ -194,10 +170,10 @@ void PropertiesPanel::drawComponents(Entity entity) {
     ImGui::DragFloat3("Scale", glm::value_ptr(component.Scale));
   });
 
-  DrawComponent<MeshComponent>(entity, [](MeshComponent& component) {
+  DrawComponent<MeshComponent>(entity, [&assets](MeshComponent& component) {
     ImGui::Text("Mesh");
     ImGui::SameLine();
-    auto mesh_assets = AssetManager::getAssetsMetadataOfType<Mesh>();
+    auto mesh_assets = assets.getAssetsMetadataOfType<Mesh>();
     auto current_name =
         mesh_assets.contains(component.mesh_handle) ? mesh_assets[component.mesh_handle].filepath.stem().c_str() : "";
 
@@ -214,10 +190,10 @@ void PropertiesPanel::drawComponents(Entity entity) {
     }
   });
 
-  DrawComponent<MaterialComponent>(entity, [](MaterialComponent& component) {
-    auto materials = AssetManager::getAssetsMetadataOfType<Material>();
-    auto material = AssetManager::getAsset<Material>(component.material_handle);
-    auto current_name = material ? AssetManager::getAssetMetadata(material->handle).filepath.stem().c_str() : "";
+  DrawComponent<MaterialComponent>(entity, [&assets](MaterialComponent& component) {
+    auto materials = assets.getAssetsMetadataOfType<Material>();
+    auto material = assets.getAsset<Material>(component.material_handle);
+    auto current_name = material ? assets.getAssetMetadata(material->handle).filepath.stem().c_str() : "";
 
     if (ImGui::BeginCombo("##material", current_name)) {
       for (const auto& [id, meta] : materials) {
@@ -226,12 +202,45 @@ void PropertiesPanel::drawComponents(Entity entity) {
 
         if (ImGui::Selectable(name, selected)) {
           component.material_handle = id;
-          material = AssetManager::getAsset<Material>(id);
+          material = assets.getAsset<Material>(id);
         }
       }
       ImGui::EndCombo();
     }
   });
+}
+
+// --- ImGui -----------------------------------------------------------------------------------------------------------
+void PropertiesPanel::onImGuiRender(SelectionContext& selection_context) {
+  ImGui::Begin("Properties");
+  if (std::holds_alternative<Entity>(selection_context)) {
+    drawComponents(std::get<Entity>(selection_context));
+  } else if (std::holds_alternative<UUID>(selection_context)) {
+    auto id = std::get<UUID>(selection_context);
+    auto& meta = m_context.assets.getAssetMetadata(id);
+
+    switch (meta.type) {
+      case AssetType::Mesh: {
+        auto asset = m_context.assets.getAsset<Mesh>(id);
+        break;
+      }
+      case AssetType::Material: {
+        auto asset = m_context.assets.getAsset<Material>(id);
+        drawMaterial(asset, meta);
+        break;
+      }
+      case AssetType::Shader: {
+        auto asset = m_context.assets.getAsset<Shader>(id);
+        break;
+      }
+      default:
+        break;
+    }
+
+  } else {
+    ImGui::Text("Nothing selected");
+  }
+  ImGui::End();
 }
 
 template <typename T>

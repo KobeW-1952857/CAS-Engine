@@ -13,30 +13,37 @@
 #include "renderer/renderer.h"
 #include "scene/components.h"
 #include "scene/entity.h"
+#include "scene/scene.h"
 #include "utils/filesystem.h"
 #include "utils/utils.h"
 
-Editor::Editor() : m_viewport_size(1280, 720) { init(); }
+Editor::Editor() : m_viewport_size(1280, 720), m_asset_browser_panel(m_context), m_properties_panel(m_context) {
+  init();
+}
 
-Editor::Editor(const std::vector<std::string>& args) : m_viewport_size(1280, 720) {
+Editor::Editor(const std::vector<std::string>& args)
+    : m_viewport_size(1280, 720), m_asset_browser_panel(m_context), m_properties_panel(m_context) {
   init();
   if (!args.empty()) {
-    Project::load(args[0]);
-    m_serializer.deserialize(Project::getConfig().start_scene);
+    m_context.project.load(args[0]);
+    m_serializer.deserialize(m_context.project.getConfig().start_scene);
   }
 }
 
+std::shared_ptr<Scene> Editor::makeScene() { return std::make_shared<Scene>(&m_context.assets, &m_context.renderer); }
+
 void Editor::init() {
-  Renderer::init();
+  m_context.renderer.init(m_context.filesystem);
+
   FramebufferSpecification spec;
   spec.width = 1280;
   spec.height = 720;
-  spec.attachments = {FramebufferTextureSpecification(FramebufferTextureFormat::RGBA8),             // Color
-                      FramebufferTextureSpecification(FramebufferTextureFormat::RED_INTEGER),       // Entity ID
-                      FramebufferTextureSpecification(FramebufferTextureFormat::DEPTH24STENCIL8)};  // Depth
+  spec.attachments = {FramebufferTextureFormat::RGBA8,             // Color
+                      FramebufferTextureFormat::RED_INTEGER,       // Entity ID
+                      FramebufferTextureFormat::DEPTH24STENCIL8};  // Depth
 
   m_framebuffer = std::make_shared<Framebuffer>(spec);
-  m_active_scene = std::make_shared<Scene>();
+  m_active_scene = makeScene();
   m_serializer.setContext(m_active_scene);
   m_scene_hierarchy_panel.setContext(m_active_scene);
 
@@ -98,11 +105,11 @@ void Editor::onUpdate(float dt) {
 void Editor::onImGuiRender() {
   ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
-  if (Project::hasProject()) {
+  if (m_context.project.hasProject()) {
     static bool was_focused = true;
     bool is_focused = ImGui::IsWindowFocused(ImGuiFocusedFlags_AnyWindow);
     if (is_focused && !was_focused) {
-      AssetManager::syncFileSystem();
+      m_context.assets.syncFileSystem();
     }
     was_focused = is_focused;
     handleShortcuts();
@@ -112,12 +119,12 @@ void Editor::onImGuiRender() {
   } else {
     ImGui::Begin("Open/create Project");
     if (ImGui::Button("Open")) {
-      Project::load();
-      m_serializer.deserialize(FileSystem::resolvePath(Project::getConfig().start_scene));
+      m_context.project.load();
+      m_serializer.deserialize(m_context.filesystem.resolvePath(m_context.project.getConfig().start_scene));
     }
     ImGui::SameLine();
     if (ImGui::Button("New")) {
-      Project::New();
+      m_context.project.New();
     }
     ImGui::End();
   }
@@ -127,12 +134,12 @@ void Editor::drawDockspace() {
   ImGui::BeginMainMenuBar();
   if (ImGui::BeginMenu("File")) {
     if (ImGui::MenuItem("Open Project")) {
-      Project::load();
-      m_serializer.deserialize(FileSystem::resolvePath(Project::getConfig().start_scene));
+      m_context.project.load();
+      m_serializer.deserialize(m_context.filesystem.resolvePath(m_context.project.getConfig().start_scene));
     }
     if (ImGui::MenuItem("Save Project")) {
-      Project::save();
-      m_serializer.serialize(Project::getConfig().start_scene);
+      m_context.project.save();
+      m_serializer.serialize(m_context.project.getConfig().start_scene);
     }
     ImGui::EndMenu();
   }
@@ -193,14 +200,14 @@ void Editor::handleShortcuts() {
   if (io.WantTextInput) return;
 
   if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S)) {
-    Project::save();
-    m_serializer.serialize(Project::getConfig().start_scene);
+    m_context.project.save();
+    m_serializer.serialize(m_context.project.getConfig().start_scene);
   }
   if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O)) {
-    Project::load();
+    m_context.project.load();
   }
   if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_N)) {
-    Project::New();
+    m_context.project.New();
   }
   if (ImGui::IsKeyPressed(ImGuiKey_F)) {
     // Focus on selected object

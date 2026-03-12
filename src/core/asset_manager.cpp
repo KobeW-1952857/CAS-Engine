@@ -18,14 +18,14 @@ void AssetManager::init() {
   s_ENGINE_ASSETS = 0;
   registerEngineAssets();
 
-  if (std::filesystem::exists(FileSystem::resolvePath("project://assets.casreg")))
-    deserialize(FileSystem::resolvePath("project://assets.casreg"));
+  if (std::filesystem::exists(m_filesystem.resolvePath("project://assets.casreg")))
+    deserialize(m_filesystem.resolvePath("project://assets.casreg"));
 
   syncFileSystem();
 }
 
 void AssetManager::registerEngineAssets() {
-  auto path = FileSystem::resolvePath("engine://assets.casreg");
+  auto path = m_filesystem.resolvePath("engine://assets.casreg");
   s_ENGINE_ASSETS = parseRegistry(path);
   Nexus::Logger::info("Loaded {} engine assets", s_ENGINE_ASSETS);
 }
@@ -49,7 +49,7 @@ void AssetManager::serialize() {
   out << YAML::EndSeq;
   out << YAML::EndMap;
 
-  std::ofstream fout(FileSystem::resolvePath("project://assets.casreg"));
+  std::ofstream fout(m_filesystem.resolvePath("project://assets.casreg"));
   fout << out.c_str();
 }
 
@@ -59,7 +59,7 @@ void AssetManager::saveAssets() {
       asset->modified = false;
       auto meta = getAssetMetadata(id);
       if (meta.is_engine_asset) continue;
-      asset->serialize(FileSystem::resolvePath(meta.filepath));
+      asset->serialize(m_filesystem.resolvePath(meta.filepath));
     }
   }
 }
@@ -122,7 +122,7 @@ UUID AssetManager::getHandleFromPath(const std::filesystem::path& path) {
 AssetMetadata& AssetManager::getAssetMetadata(UUID handle) { return s_asset_registry[handle]; }
 
 void AssetManager::syncFileSystem() {
-  auto project_path = Project::getProjectPath();
+  auto project_path = m_filesystem.getProjectRoot();
   if (!std::filesystem::exists(project_path)) return;
   Nexus::Logger::info("Syncing file system...");
 
@@ -137,7 +137,7 @@ void AssetManager::syncFileSystem() {
   for (const auto& entry : std::filesystem::recursive_directory_iterator(project_path)) {
     if (!entry.is_regular_file()) continue;
 
-    std::string file_path = FileSystem::getProjectPath(entry.path()).string();
+    std::string file_path = m_filesystem.getProjectPath(entry.path()).string();
     std::string extension = entry.path().extension().string();
 
     files_on_disk.insert(file_path);

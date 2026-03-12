@@ -21,22 +21,25 @@ void Project::load(const std::filesystem::path& path) {
     return;
   }
   Nexus::Logger::info("Successfully loaded project '{}'", path.string());
-  FileSystem::s_project_root = s_config.path;
-  AssetManager::init();
+  m_filesystem.setProjectRoot(m_config.path);
+  m_assets.init();
+  m_has_project = true;
 }
 
 void Project::save() {
-  serialize(s_config.path / (s_config.name + ".cproj"));
-  AssetManager::saveAssets();
-  Nexus::Logger::info("Successfully saved project '{}'", s_config.path.string());
+  serialize(m_config.path / (m_config.name + ".cproj"));
+  m_assets.saveAssets();
+  Nexus::Logger::info("Successfully saved project '{}'", m_config.path.string());
 }
 
 void Project::New() {
   auto save_path = std::filesystem::path(FileDialog::saveFile());
   if (save_path.empty()) return;
-  s_config.path = save_path.parent_path();
-  s_config.name = save_path.stem();
+  m_config.path = save_path.parent_path();
+  m_config.name = save_path.stem();
   serialize(save_path);
+  m_filesystem.setProjectRoot(m_config.path);
+  m_has_project = true;
   Nexus::Logger::info("Successfully saved project '{}'", save_path.string());
 }
 
@@ -44,9 +47,9 @@ bool Project::serialize(const std::filesystem::path& path) {
   YAML::Emitter out;
   out << YAML::BeginMap;
   out << YAML::Key << "Project" << YAML::Value << YAML::BeginMap;
-  out << YAML::Key << "Name" << YAML::Value << s_config.name;
-  out << YAML::Key << "Path" << YAML::Value << s_config.path;
-  out << YAML::Key << "StartScene" << YAML::Value << s_config.start_scene;
+  out << YAML::Key << "Name" << YAML::Value << m_config.name;
+  out << YAML::Key << "Path" << YAML::Value << m_config.path;
+  out << YAML::Key << "StartScene" << YAML::Value << m_config.start_scene;
   out << YAML::EndMap;
   out << YAML::EndMap;
 
@@ -69,9 +72,9 @@ bool Project::deserialize(const std::filesystem::path& path) {
     return false;
   }
 
-  s_config.name = node["Project"]["Name"].as<std::string>();
-  s_config.path = node["Project"]["Path"].as<std::string>();
-  s_config.start_scene = node["Project"]["StartScene"].as<std::string>();
+  m_config.name = node["Project"]["Name"].as<std::string>();
+  m_config.path = node["Project"]["Path"].as<std::string>();
+  m_config.start_scene = node["Project"]["StartScene"].as<std::string>();
 
   return true;
 }

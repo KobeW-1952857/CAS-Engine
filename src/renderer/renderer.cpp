@@ -5,15 +5,10 @@
 #include "utils/filesystem.h"
 #include "utils/utils.h"
 
-Renderer::SceneData Renderer::s_scene_data;
-std::shared_ptr<Shader> Renderer::s_outline_shader;
-std::shared_ptr<Shader> Renderer::s_entity_id_shader;
-GLuint Renderer::s_per_frame_ubo = 0;
-GLuint Renderer::s_per_draw_ubo = 0;
-
-void Renderer::init() {
-  s_outline_shader = std::make_shared<Shader>(FileSystem::resolvePath("engine://shaders/outline"));
-  s_entity_id_shader = std::make_shared<Shader>(FileSystem::resolvePath("engine://shaders/engine/entity_id"));
+void Renderer::init(FileSystem& filesystem) {
+  s_outline_shader = std::make_shared<Shader>(filesystem.resolvePath("engine://shaders/outline"), filesystem);
+  s_entity_id_shader =
+      std::make_shared<Shader>(filesystem.resolvePath("engine://shaders/engine/entity_id"), filesystem);
 
   glGenBuffers(1, &s_per_frame_ubo);
   glBindBuffer(GL_UNIFORM_BUFFER, s_per_frame_ubo);
@@ -111,11 +106,8 @@ void Renderer::submitEntityID(const std::shared_ptr<Mesh>& mesh, const glm::mat4
 }
 
 void Renderer::submitOutline(const std::shared_ptr<Mesh>& mesh, const glm::mat4& transform, const glm::vec3& color,
-                             float width_pixels) {
+                             float outline_width) {
   if (!mesh || !s_outline_shader) return;
-
-  GLenum color_only[] = {GL_COLOR_ATTACHMENT0, GL_NONE};
-  glDrawBuffers(2, color_only);
 
   glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
   glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
@@ -123,7 +115,7 @@ void Renderer::submitOutline(const std::shared_ptr<Mesh>& mesh, const glm::mat4&
   glDisable(GL_DEPTH_TEST);
 
   s_outline_shader->use();
-  s_outline_shader->setFloat("u_outline_width", width_pixels);
+  s_outline_shader->setFloat("u_outline_width", outline_width);
   s_outline_shader->setVec3("u_outline_color", color);
   PerDrawUBO draw_data{
       .model = transform,
@@ -133,8 +125,6 @@ void Renderer::submitOutline(const std::shared_ptr<Mesh>& mesh, const glm::mat4&
   glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
   mesh->render();
-  GLenum both[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
-  glDrawBuffers(2, both);
 
   glDisable(GL_STENCIL_TEST);
   glStencilMask(0xFF);

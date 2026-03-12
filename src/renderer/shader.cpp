@@ -20,14 +20,14 @@ static const std::unordered_map<std::string, ShaderStage> extension_to_stage = {
     {".tesc", ShaderStage::TessControl}, {".tese", ShaderStage::TessEvaluation},
 };
 
-Shader::Shader(const std::filesystem::path& path) {
+Shader::Shader(const std::filesystem::path& path, FileSystem& fs) {
   type = AssetType::Shader;
   m_id = glCreateProgram();
 
   for (const auto& [ext, stage] : extension_to_stage) {
     auto stage_path = path.parent_path() / (path.stem().string() + ext);
     if (std::filesystem::exists(stage_path)) {
-      addStage(stage, stage_path);
+      addStage(stage, stage_path, fs);
     }
   }
   linkProgram();
@@ -36,7 +36,7 @@ Shader::Shader(const std::filesystem::path& path) {
 Shader::~Shader() { glDeleteProgram(m_id); }
 
 static std::string preprocessIncludes(const std::string& source, const std::filesystem::path& shader_dir,
-                                      std::unordered_set<std::string>& visited) {
+                                      std::unordered_set<std::string>& visited, FileSystem& fs) {
   std::string result;
   std::istringstream stream(source);
   std::string line;
@@ -51,16 +51,16 @@ static std::string preprocessIncludes(const std::string& source, const std::file
 
         std::filesystem::path resolved;
         if (inc.starts_with("engine://") || inc.starts_with("project://")) {
-          resolved = FileSystem::resolvePath(inc);
+          resolved = fs.resolvePath(inc);
         } else {
           auto rel = shader_dir / inc;
-          resolved = std::filesystem::exists(rel) ? rel : FileSystem::resolvePath("engine://shaders/" + inc);
+          resolved = std::filesystem::exists(rel) ? rel : fs.resolvePath("engine://shaders/" + inc);
         }
 
         auto key = resolved.string();
         if (!visited.contains(key) && std::filesystem::exists(resolved)) {
           visited.insert(key);
-          result += preprocessIncludes(readFile(resolved.c_str()), resolved.parent_path(), visited);
+          result += preprocessIncludes(readFile(resolved.c_str()), resolved.parent_path(), visited, fs);
         } else if (!std::filesystem::exists(resolved)) {
           Nexus::Logger::error("Shader include not found: {}", inc);
         }
@@ -73,12 +73,12 @@ static std::string preprocessIncludes(const std::string& source, const std::file
   return result;
 }
 
-bool Shader::addStage(ShaderStage stage, const std::filesystem::path& path) {
+bool Shader::addStage(ShaderStage stage, const std::filesystem::path& path, FileSystem& fs) {
   m_stagePaths[stage] = path;
   if (!m_isLinked) {
     auto source = readFile(path.c_str());
     auto visited = std::unordered_set<std::string>{path.string()};
-    source = preprocessIncludes(source, path.parent_path(), visited);
+    source = preprocessIncludes(source, path.parent_path(), visited, fs);
 
     return addShaderStage(stage, source.c_str());
   }
@@ -98,7 +98,7 @@ void Shader::removeStage(ShaderStage stage) {
 
 bool Shader::hasStage(ShaderStage stage) { return m_stagePaths.find(stage) != m_stagePaths.end(); }
 
-bool Shader::relink() {
+bool Shader::relink(FileSystem& fs) {
   if (!m_isLinked) return linkProgram();
   m_isLinked = false;
 
@@ -119,7 +119,7 @@ bool Shader::relink() {
     return false;
   };
 
-  for (const auto& [stage, path] : old_stage_paths) success |= addStage(stage, path);
+  for (const auto& [stage, path] : old_stage_paths) success |= addStage(stage, path, fs);
   if (!success) return reset();
   if (!linkProgram()) return reset();
 

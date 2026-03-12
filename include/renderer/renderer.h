@@ -7,6 +7,8 @@
 #include "renderer/mesh.h"
 #include "renderer/shader.h"
 
+class FileSystem;
+
 class Renderer {
  public:
   struct SceneData {
@@ -16,19 +18,23 @@ class Renderer {
     glm::mat4 projection;
     glm::vec3 cam_pos;
   };
-  static void init();
 
-  static void beginScene(SceneData scene_data);
-  static void beginColorPass();
-  static void beginEntityIDPass();
-  static void endScene();
+  Renderer() = default;
+  ~Renderer() = default;
 
-  static void submit(const std::shared_ptr<Mesh>& mesh, const std::shared_ptr<Material>& material,
-                     const glm::mat4& transform, bool mark_stencil = false);
-  static void submitEntityID(const std::shared_ptr<Mesh>& mesh, const glm::mat4& transform, int entity_id);
+  void init(FileSystem& filesystem);
 
-  static void submitOutline(const std::shared_ptr<Mesh>& mesh, const glm::mat4& transform,
-                            const glm::vec3& color = {1.0f, 0.5f, 0.0f}, float outline_width = 10.0f);
+  void beginScene(SceneData scene_data);
+  void beginColorPass();
+  void beginEntityIDPass();
+  void endScene();
+
+  void submit(const std::shared_ptr<Mesh>& mesh, const std::shared_ptr<Material>& material, const glm::mat4& transform,
+              bool mark_stencil = false);
+  void submitEntityID(const std::shared_ptr<Mesh>& mesh, const glm::mat4& transform, int entity_id);
+
+  void submitOutline(const std::shared_ptr<Mesh>& mesh, const glm::mat4& transform,
+                     const glm::vec3& color = {1.0f, 0.5f, 0.0f}, float outline_width = 10.0f);
 
  private:
   struct PerFrameUBO {
@@ -43,10 +49,10 @@ class Renderer {
     glm::mat4 model;
   };
 
-  static SceneData s_scene_data;
-  static std::shared_ptr<Shader> s_outline_shader;
-  static std::shared_ptr<Shader> s_entity_id_shader;
+  SceneData s_scene_data;
+  std::shared_ptr<Shader> s_outline_shader;
+  std::shared_ptr<Shader> s_entity_id_shader;
 
-  static GLuint s_per_frame_ubo;
-  static GLuint s_per_draw_ubo;
+  GLuint s_per_frame_ubo;
+  GLuint s_per_draw_ubo;
 };

@@ -9,6 +9,8 @@
 #include "core/project.h"
 #include "core/uuid.h"
 
+class FileSystem;
+
 struct AssetMetadata {
   UUID handle;
   AssetType type;
@@ -19,44 +21,47 @@ struct AssetMetadata {
 
 class AssetManager {
  public:
-  static void init();
+  explicit AssetManager(FileSystem& filesystem) : m_filesystem(filesystem) {}
+  void init();
 
   template <typename T>
-  static std::vector<UUID> getAssetsOfType();
+  std::vector<UUID> getAssetsOfType();
   template <typename T>
-  static std::unordered_map<UUID, AssetMetadata> getAssetsMetadataOfType();
-  static UUID getHandleFromPath(const std::filesystem::path& path);
-  static AssetMetadata& getAssetMetadata(UUID handle);
+  std::unordered_map<UUID, AssetMetadata> getAssetsMetadataOfType();
+  UUID getHandleFromPath(const std::filesystem::path& path);
+  AssetMetadata& getAssetMetadata(UUID handle);
 
   template <typename T>
-  static std::shared_ptr<T> getAsset(UUID handle);
+  std::shared_ptr<T> getAsset(UUID handle);
   template <typename T>
-  static std::shared_ptr<T> getDefaultAsset();
+  std::shared_ptr<T> getDefaultAsset();
 
   template <typename T>
-  static UUID createNewAsset(const std::filesystem::path& virtual_directory = "project://");
+  UUID createNewAsset(const std::filesystem::path& virtual_directory = "project://");
 
-  static void serialize();
-  static void saveAssets();
-  static void deserialize(const std::filesystem::path& path = Project::getConfig().path / "assets.cas");
+  void serialize();
+  void saveAssets();
+  void deserialize(const std::filesystem::path& path);
 
-  static void syncFileSystem();
+  void syncFileSystem();
 
  private:
   template <typename T>
-  static std::shared_ptr<T> loadAsset(UUID handle);
+  std::shared_ptr<T> loadAsset(UUID handle);
 
   template <typename T>
   static AssetType getAssetType();
-  static void registerEngineAssets();
+  void registerEngineAssets();
 
-  static uint64_t parseRegistry(const std::filesystem::path& path);
+  uint64_t parseRegistry(const std::filesystem::path& path);
 
  private:
-  inline static uint64_t s_ENGINE_ASSETS = 0;
-  inline static std::unordered_map<UUID, AssetMetadata> s_asset_registry;
-  inline static std::unordered_map<UUID, std::shared_ptr<Asset>> s_loaded_assets;
-  inline static std::unordered_map<AssetType, UUID> s_default_assets;
+  uint64_t s_ENGINE_ASSETS = 0;
+  std::unordered_map<UUID, AssetMetadata> s_asset_registry;
+  std::unordered_map<UUID, std::shared_ptr<Asset>> s_loaded_assets;
+  std::unordered_map<AssetType, UUID> s_default_assets;
+
+  FileSystem& m_filesystem;
 };
 
 #include "asset_manager.inl"

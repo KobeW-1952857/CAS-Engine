@@ -10,6 +10,8 @@
 
 #include "core/asset.h"
 
+class FileSystem;
+
 struct UniformInfo {
   std::string name;
   GLint size;
@@ -26,16 +28,16 @@ class Shader : public Asset {
     m_id = glCreateProgram();
     type = AssetType::Shader;
   };
-  Shader(const std::filesystem::path& path);
+  Shader(const std::filesystem::path& path, FileSystem& fs);
   Shader& operator=(Shader other);
   ~Shader();
 
   void use();
   bool compile();
-  bool addStage(ShaderStage stage, const std::filesystem::path& path);
+  bool addStage(ShaderStage stage, const std::filesystem::path& path, FileSystem& fs);
   void removeStage(ShaderStage stage);
   bool hasStage(ShaderStage stage);
-  bool relink();
+  bool relink(FileSystem& fs);
   bool linkProgram();
 
   std::vector<UniformInfo> getActiveUniforms() const;

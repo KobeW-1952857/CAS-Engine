@@ -56,17 +56,17 @@ UUID AssetManager::createNewAsset(const std::filesystem::path& virtual_directory
   // TODO(Kobe): Add all other asset types
 
   std::filesystem::path virtual_path = virtual_directory / std::string(base_name).append(extension);
-  std::filesystem::path absolute_path = FileSystem::resolvePath(virtual_path);
+  std::filesystem::path absolute_path = m_filesystem.resolvePath(virtual_path);
 
   int counter = 1;
   while (std::filesystem::exists(absolute_path)) {
     virtual_path = virtual_directory / (std::string(base_name) + "_" + std::to_string(counter).append(extension));
-    absolute_path = FileSystem::resolvePath(virtual_path);
+    absolute_path = m_filesystem.resolvePath(virtual_path);
     counter++;
   }
 
   auto new_asset = std::make_shared<T>();
-  new_asset->serialize(FileSystem::resolvePath(virtual_path));
+  new_asset->serialize(m_filesystem.resolvePath(virtual_path));
 
   UUID new_id;
   new_asset->handle = new_id;
@@ -92,16 +92,16 @@ std::shared_ptr<T> AssetManager::loadAsset(UUID handle) {
   const auto& metadata = s_asset_registry[handle];
   std::shared_ptr<T> asset = nullptr;
 
-  auto path = FileSystem::resolvePath(metadata.filepath);
+  auto path = m_filesystem.resolvePath(metadata.filepath);
 
   if constexpr (std::is_same_v<T, Texture>) {
     asset = std::make_shared<Texture>(path.string());
   } else if constexpr (std::is_same_v<T, Mesh>) {
     asset = std::make_shared<Mesh>(path.string());
   } else if constexpr (std::is_same_v<T, Shader>) {
-    asset = std::make_shared<Shader>(path);
+    asset = std::make_shared<Shader>(path, m_filesystem);
   } else if constexpr (std::is_same_v<T, Material>) {
-    asset = Material::load(path.string());
+    asset = Material::load(path.string(), *this);
   }
 
   if (!asset) return nullptr;

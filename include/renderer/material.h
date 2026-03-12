@@ -10,6 +10,8 @@
 #include "shader.h"
 #include "texture.h"
 
+class AssetManager;
+
 using MaterialProperty = std::variant<int, float, glm::vec2, glm::vec3, glm::vec4, glm::mat4>;
 
 class Material : public Asset {
@@ -17,7 +19,7 @@ class Material : public Asset {
   Material();
   Material(std::shared_ptr<Shader> shader);
 
-  static std::shared_ptr<Material> load(const std::string& filepath);
+  static std::shared_ptr<Material> load(const std::string& filepath, AssetManager& assets);
 
   template <typename T>
   void setProperty(const std::string& name, const T& value) {

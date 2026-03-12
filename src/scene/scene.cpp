@@ -39,35 +39,35 @@ void Scene::onRender(Entity selected_entity, const EditorCamera& camera, const g
                                  .view_proj = camera.getViewProjectionMatrix(),
                                  .projection = camera.getProjectionMatrix(),
                                  .view = camera.getViewMatrix()};
-  Renderer::beginScene(scene_data);
+  m_renderer->beginScene(scene_data);
   auto view = m_registry.view<TransformComponent, MaterialComponent, MeshComponent>();
 
-  Renderer::beginColorPass();
+  m_renderer->beginColorPass();
   for (auto entity : view) {
     Entity e(entity, shared_from_this());
-    auto mesh = AssetManager::getAsset<Mesh>(e.getComponent<MeshComponent>().mesh_handle);
-    auto material = AssetManager::getAsset<Material>(e.getComponent<MaterialComponent>().material_handle);
+    auto mesh = m_assets->getAsset<Mesh>(e.getComponent<MeshComponent>().mesh_handle);
+    auto material = m_assets->getAsset<Material>(e.getComponent<MaterialComponent>().material_handle);
     auto transform = e.getComponent<TransformComponent>().getTransform();
 
-    Renderer::submit(mesh, material, transform, e == selected_entity);
+    m_renderer->submit(mesh, material, transform, e == selected_entity);
   }
 
-  if (selected_entity) {
+  if (selected_entity && selected_entity.hasComponent<MeshComponent>()) {
     auto& tc = selected_entity.getComponent<TransformComponent>();
-    auto mesh = AssetManager::getAsset<Mesh>(selected_entity.getComponent<MeshComponent>().mesh_handle);
-    Renderer::submitOutline(mesh, tc.getTransform());
+    auto mesh = m_assets->getAsset<Mesh>(selected_entity.getComponent<MeshComponent>().mesh_handle);
+    m_renderer->submitOutline(mesh, tc.getTransform());
   }
 
-  Renderer::beginEntityIDPass();
+  m_renderer->beginEntityIDPass();
   for (auto entity : view) {
     Entity e(entity, shared_from_this());
-    auto mesh = AssetManager::getAsset<Mesh>(e.getComponent<MeshComponent>().mesh_handle);
+    auto mesh = m_assets->getAsset<Mesh>(e.getComponent<MeshComponent>().mesh_handle);
     auto transform = e.getComponent<TransformComponent>().getTransform();
 
-    Renderer::submitEntityID(mesh, transform, static_cast<int>(static_cast<uint32_t>(e)));
+    m_renderer->submitEntityID(mesh, transform, static_cast<int>(static_cast<uint32_t>(e)));
   }
 
-  Renderer::endScene();
+  m_renderer->endScene();
 }
 
 void Scene::renderEntity(Entity entity, const glm::mat4& view_proj) {
@@ -76,8 +76,8 @@ void Scene::renderEntity(Entity entity, const glm::mat4& view_proj) {
   auto& mc = entity.getComponent<MeshComponent>();
   auto& matc = entity.getComponent<MaterialComponent>();
 
-  auto mesh = AssetManager::getAsset<Mesh>(mc.mesh_handle);
-  auto material = AssetManager::getAsset<Material>(matc.material_handle);
+  auto mesh = m_assets->getAsset<Mesh>(mc.mesh_handle);
+  auto material = m_assets->getAsset<Material>(matc.material_handle);
 
   if (mesh && material) {
     material->setProperty("u_proj_view", view_proj);

@@ -2,9 +2,6 @@
 
 #include <filesystem>
 
-#include "Nexus/Log.h"
-#include "core/project.h"
-
 #ifdef _WIN32
 #include <windows.h>
 #elif defined(__APPLE__)
@@ -13,21 +10,31 @@
 
 class FileSystem {
  public:
-  static std::filesystem::path resolvePath(const std::filesystem::path& virtual_path) {
+  FileSystem() {
+    m_exe_dir = getExecutableDir();
+    m_engine_root = m_exe_dir / ".." / "Resources" / "assets";
+  }
+
+  void setProjectRoot(const std::filesystem::path& path) { m_project_root = path; }
+
+  [[nodiscard]] std::filesystem::path resolvePath(const std::filesystem::path& virtual_path) {
     std::string path_str = virtual_path.string();
-    if (path_str.starts_with("engine://")) return s_engine_root / path_str.substr(9);
-    if (path_str.starts_with("project://")) return s_project_root / path_str.substr(10);
+    if (path_str.starts_with("engine://")) return m_engine_root / path_str.substr(9);
+    if (path_str.starts_with("project://")) return m_project_root / path_str.substr(10);
     return virtual_path;
   }
 
-  static std::filesystem::path getProjectPath(const std::filesystem::path& absolute_path) {
+  [[nodiscard]] std::filesystem::path getProjectPath(const std::filesystem::path& absolute_path) {
     std::string path_str = absolute_path.string();
     if (path_str.starts_with("project://")) return absolute_path;
-    auto relative_path = absolute_path.lexically_relative(s_project_root);
+    auto relative_path = absolute_path.lexically_relative(m_project_root);
     return "project://" / relative_path;
   }
 
-  static std::filesystem::path getExecutableDir() {
+  [[nodiscard]] const std::filesystem::path& getProjectRoot() const { return m_project_root; }
+  [[nodiscard]] const std::filesystem::path& getEngineRoot() const { return m_engine_root; }
+
+  [[nodiscard]] std::filesystem::path getExecutableDir() {
 #ifdef _WIN32
     char path[MAX_PATH];
     GetModuleFileNameA(NULL, path, MAX_PATH);
@@ -45,7 +52,7 @@ class FileSystem {
 #endif
   }
 
-  inline static std::filesystem::path s_exe_dir = FileSystem::getExecutableDir();
-  inline static std::filesystem::path s_engine_root = s_exe_dir / ".." / "Resources" / "assets";
-  inline static std::filesystem::path s_project_root = Project::getConfig().path;
+  std::filesystem::path m_exe_dir = FileSystem::getExecutableDir();
+  std::filesystem::path m_engine_root;
+  std::filesystem::path m_project_root;
 };

@@ -4,18 +4,20 @@
 
 #include <filesystem>
 
-#include "Nexus/Log.h"
 #include "core/asset_manager.h"
 #include "core/project.h"
 #include "utils/filesystem.h"
 
 void AssetBrowser::drawDirectoryNode(const std::filesystem::path& path, SelectionContext& selection_context) {
+  auto& assets = m_context.assets;
+  auto& fs = m_context.filesystem;
+
   for (auto const& entry : std::filesystem::directory_iterator(path)) {
     if (entry.is_directory()) {
       bool is_open = ImGui::TreeNode(entry.path().filename().c_str());
       if (ImGui::BeginPopupContextItem()) {
         if (ImGui::MenuItem("New material")) {
-          AssetManager::createNewAsset<Material>(FileSystem::getProjectPath(entry.path()));
+          assets.createNewAsset<Material>(fs.getProjectPath(entry.path()));
         }
         ImGui::EndPopup();
       }
@@ -33,8 +35,8 @@ void AssetBrowser::drawFileNode(const std::filesystem::path& path, SelectionCont
   ImGui::PushID(path.c_str());
 
   if (ImGui::Selectable(std::format("{}", path.stem().string().c_str()).c_str(), m_selected == path)) {
-    auto selected_path = FileSystem::getProjectPath(path);
-    selection_context = AssetManager::getHandleFromPath(selected_path);
+    auto selected_path = m_context.filesystem.getProjectPath(path);
+    selection_context = m_context.assets.getHandleFromPath(selected_path);
   }
 
   ImGui::PopID();
@@ -42,21 +44,17 @@ void AssetBrowser::drawFileNode(const std::filesystem::path& path, SelectionCont
 
 void AssetBrowser::onImGuiRender(SelectionContext& selection_context) {
   ImGui::Begin("Asset Browser");
-  drawDirectoryNode(Project::getConfig().path, selection_context);
+  drawDirectoryNode(m_context.project.getConfig().path, selection_context);
 
   ImGuiPopupFlags flags = ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems;
 
   if (ImGui::BeginPopupContextWindow(nullptr, flags)) {
     if (ImGui::MenuItem("New material")) {
-      AssetManager::createNewAsset<Material>();
+      m_context.assets.createNewAsset<Material>();
     }
     ImGui::EndPopup();
   }
   ImGui::End();
 }
 
-void AssetBrowser::onUpdate(float dt) {
-  // m_check_time -= dt;
-  // if (m_check_time > 0.0f) return;
-  // m_check_time = m_check_interval;
-}
+void AssetBrowser::onUpdate(float dt) {}

@@ -10,14 +10,11 @@
 #include "renderer/shader.h"
 #include "utils/yaml_extension.h"
 
-Material::Material() {
-  type = AssetType::Material;
-  shader = AssetManager::getDefaultAsset<Shader>();
-}
+Material::Material() { type = AssetType::Material; }
 
 Material::Material(std::shared_ptr<Shader> shader) : shader(std::move(shader)) { type = AssetType::Material; }
 
-std::shared_ptr<Material> Material::load(const std::string& filepath) {
+std::shared_ptr<Material> Material::load(const std::string& filepath, AssetManager& assets) {
   Nexus::Logger::trace("Loading material from {}...", filepath);
   YAML::Node data;
   try {
@@ -39,7 +36,7 @@ std::shared_ptr<Material> Material::load(const std::string& filepath) {
   }
 
   auto material = std::make_shared<Material>();
-  material->shader = AssetManager::getAsset<Shader>(shader_node.as<UUID>());
+  material->shader = assets.getAsset<Shader>(shader_node.as<UUID>());
 
   auto properties = matNode["Properties"];
   if (!properties) return material;
