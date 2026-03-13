@@ -58,8 +58,8 @@ void AssetManager::serialize() {
 
 void AssetManager::saveAssets() {
   for (const auto& [id, asset] : s_loaded_assets) {
-    Nexus::Logger::debug("Checking if {} needs to be saved", static_cast<uint64_t>(id));
-    if (!asset->modified) continue;
+    // TODO(kobe): create propper system to mark assets as dirty
+    // if (!asset->modified) continue;
     const auto& meta = getAssetMetadata(id);
 
     auto path = m_filesystem.resolvePath(meta.filepath);
