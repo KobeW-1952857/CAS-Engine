@@ -34,9 +34,15 @@ void AssetBrowser::drawDirectoryNode(const std::filesystem::path& path, Selectio
 void AssetBrowser::drawFileNode(const std::filesystem::path& path, SelectionContext& selection_context) {
   ImGui::PushID(path.c_str());
 
+  auto selected_path = m_context.filesystem.getProjectPath(path);
+  auto handle = m_context.assets.getHandleFromPath(selected_path);
+
   if (ImGui::Selectable(std::format("{}", path.stem().string().c_str()).c_str(), m_selected == path)) {
-    auto selected_path = m_context.filesystem.getProjectPath(path);
-    selection_context = m_context.assets.getHandleFromPath(selected_path);
+    selection_context = handle;
+  }
+
+  if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0) && m_on_double_click) {
+    m_on_double_click(handle);
   }
 
   ImGui::PopID();

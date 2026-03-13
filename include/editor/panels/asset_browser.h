@@ -11,6 +11,8 @@ class AssetBrowser {
   void onImGuiRender(SelectionContext& selection_context);
   void onUpdate(float dt);
 
+  void setDoubleClickCallback(std::function<void(UUID)> callback) { m_on_double_click = std::move(callback); }
+
  private:
   void drawDirectoryNode(const std::filesystem::path& path, SelectionContext& selection_context);
   void drawFileNode(const std::filesystem::path& path, SelectionContext& selection_context);
@@ -19,4 +21,6 @@ class AssetBrowser {
   AppContext& m_context;
   std::filesystem::path m_current_path;
   std::filesystem::path m_selected;
+
+  std::function<void(UUID)> m_on_double_click;
 };

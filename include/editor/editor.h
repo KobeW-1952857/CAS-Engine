@@ -11,12 +11,11 @@
 #include "editor/selection_context.h"
 #include "renderer/framebuffer.h"
 #include "scene/scene.h"
-#include "scene/scene_serializer.h"
 
 class Editor {
  public:
   Editor();
-  Editor(const std::vector<std::string>& args);
+  explicit Editor(const std::vector<std::string>& args);
   ~Editor() = default;
 
   void setContext(const std::shared_ptr<Scene>& scene);
@@ -31,12 +30,12 @@ class Editor {
   void handleShortcuts();
 
   std::shared_ptr<Scene> makeScene();
+  void openScene(UUID handle);
 
  private:
   AppContext m_context;
 
   std::shared_ptr<Scene> m_active_scene;
-  SceneSerializer m_serializer;
   EditorCamera m_editor_camera;
 
   SelectionContext m_selection_context;

@@ -3,6 +3,8 @@
 #include <filesystem>
 #include <string>
 
+#include "core/uuid.h"
+
 class FileSystem;
 class AssetManager;
 
@@ -10,7 +12,7 @@ struct ProjectConfig {
   std::string name;
   std::filesystem::path path;
   std::filesystem::path assets;
-  std::filesystem::path start_scene;
+  UUID start_scene = UUID(0);
 };
 
 class Project {

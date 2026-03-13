@@ -1,7 +1,13 @@
 Assets:
+  - ID: 6526512160245485075
+    Type: 5
+    Filepath: project://Sample scene copy.casscene
   - ID: 15127160040946736779
     Type: 4
     Filepath: project://assets/New Material.casmat
+  - ID: 7803370356633452577
+    Type: 5
+    Filepath: project://Sample scene.casscene
   - ID: 13791123961452530115
     Type: 4
     Filepath: project://assets/lit_2.casmat

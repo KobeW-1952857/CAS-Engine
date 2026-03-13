@@ -10,6 +10,7 @@
 #include "core/uuid.h"
 
 class FileSystem;
+class Renderer;
 
 struct AssetMetadata {
   UUID handle;
@@ -47,6 +48,8 @@ class AssetManager {
   void syncFileSystem();
 
   FileSystem& filesystem() { return m_filesystem; }
+  Renderer* getRenderer() { return m_renderer; }
+  void setRenderer(Renderer* renderer) { m_renderer = renderer; }
 
  private:
   template <typename T>
@@ -67,6 +70,7 @@ class AssetManager {
   std::unordered_map<AssetType, UUID> s_default_assets;
 
   FileSystem& m_filesystem;
+  Renderer* m_renderer;
 };
 
 #include "asset_manager.inl"

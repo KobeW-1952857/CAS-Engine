@@ -220,17 +220,9 @@ void PropertiesPanel::onImGuiRender(SelectionContext& selection_context) {
     auto& meta = m_context.assets.getAssetMetadata(id);
 
     switch (meta.type) {
-      case AssetType::Mesh: {
-        auto asset = m_context.assets.getAsset<Mesh>(id);
-        break;
-      }
       case AssetType::Material: {
         auto asset = m_context.assets.getAsset<Material>(id);
         drawMaterial(asset, meta);
-        break;
-      }
-      case AssetType::Shader: {
-        auto asset = m_context.assets.getAsset<Shader>(id);
         break;
       }
       default:

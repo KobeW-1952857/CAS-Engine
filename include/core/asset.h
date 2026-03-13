@@ -1,7 +1,7 @@
 #pragma once
 
 #include "core/uuid.h"
-enum class AssetType : uint8_t { None = 0, Texture, Mesh, Shader, Material };
+enum class AssetType : uint8_t { None = 0, Texture, Mesh, Shader, Material, Scene };
 
 class Asset {
  public:

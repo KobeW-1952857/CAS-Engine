@@ -9,7 +9,6 @@
 			"request": "launch",
 			"name": "Debug CASEngine",
 			"program": "${workspaceFolder}/build/CASEngine.app",
-			"args": ["${workspaceFolder}/test_project/test.cproj"],
 			"cwd": "${workspaceFolder}",
 			"preLaunchTask": "Build CASEngine"
 		}

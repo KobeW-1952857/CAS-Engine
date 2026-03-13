@@ -8,13 +8,13 @@
 #include <variant>
 
 #include "core/asset_manager.h"
+#include "core/asset_traits.h"
 #include "core/project.h"
 #include "renderer/framebuffer.h"
 #include "renderer/renderer.h"
 #include "scene/components.h"
 #include "scene/entity.h"
 #include "scene/scene.h"
-#include "utils/filesystem.h"
 #include "utils/utils.h"
 
 Editor::Editor() : m_viewport_size(1280, 720), m_asset_browser_panel(m_context), m_properties_panel(m_context) {
@@ -26,14 +26,21 @@ Editor::Editor(const std::vector<std::string>& args)
   init();
   if (!args.empty()) {
     m_context.project.load(args[0]);
-    m_serializer.deserialize(m_context.project.getConfig().start_scene);
+    openScene(m_context.project.getConfig().start_scene);
   }
 }
 
 std::shared_ptr<Scene> Editor::makeScene() { return std::make_shared<Scene>(&m_context.assets, &m_context.renderer); }
+void Editor::openScene(UUID handle) {
+  auto scene = m_context.assets.getAsset<Scene>(handle);
+  if (!scene) return;
+  setContext(scene);
+  // scene->init(&m_context.assets, &m_context.renderer);
+}
 
 void Editor::init() {
   m_context.renderer.init(m_context.filesystem);
+  m_context.assets.setRenderer(&m_context.renderer);
 
   FramebufferSpecification spec;
   spec.width = 1280;
@@ -43,9 +50,11 @@ void Editor::init() {
                       FramebufferTextureFormat::DEPTH24STENCIL8};  // Depth
 
   m_framebuffer = std::make_shared<Framebuffer>(spec);
-  m_active_scene = makeScene();
-  m_serializer.setContext(m_active_scene);
-  m_scene_hierarchy_panel.setContext(m_active_scene);
+  if (m_context.project.getConfig().start_scene) {
+    openScene(m_context.project.getConfig().start_scene);
+  } else {
+    m_active_scene = makeScene();
+  }
 
   Nexus::Logger::setCallback([](Nexus::LogLevel level, const std::string& message) {
     ConsoleMessage::Level uiLevel;
@@ -74,12 +83,23 @@ void Editor::init() {
 
     ConsolePanel::pushMessage(uiLevel, message);
   });
+
+  m_asset_browser_panel.setDoubleClickCallback([this](UUID handle) {
+    auto& meta = m_context.assets.getAssetMetadata(handle);
+    switch (meta.type) {
+      case AssetType::Scene: {
+        openScene(handle);
+        break;
+      }
+      default:
+        break;
+    }
+  });
 }
 
 void Editor::setContext(const std::shared_ptr<Scene>& scene) {
   m_active_scene = scene;
   m_scene_hierarchy_panel.setContext(scene);
-  m_serializer.setContext(scene);
 }
 
 void Editor::onUpdate(float dt) {
@@ -120,7 +140,7 @@ void Editor::onImGuiRender() {
     ImGui::Begin("Open/create Project");
     if (ImGui::Button("Open")) {
       m_context.project.load();
-      m_serializer.deserialize(m_context.filesystem.resolvePath(m_context.project.getConfig().start_scene));
+      openScene(m_context.project.getConfig().start_scene);
     }
     ImGui::SameLine();
     if (ImGui::Button("New")) {
@@ -135,17 +155,14 @@ void Editor::drawDockspace() {
   if (ImGui::BeginMenu("File")) {
     if (ImGui::MenuItem("Open Project")) {
       m_context.project.load();
-      m_serializer.deserialize(m_context.filesystem.resolvePath(m_context.project.getConfig().start_scene));
+      openScene(m_context.project.getConfig().start_scene);
     }
     if (ImGui::MenuItem("Save Project")) {
       m_context.project.save();
-      m_serializer.serialize(m_context.project.getConfig().start_scene);
     }
     ImGui::EndMenu();
   }
   ImGui::EndMainMenuBar();
-
-  // drawDebugPanel();
 
   m_scene_hierarchy_panel.onImGuiRender(m_selection_context);
   m_asset_browser_panel.onImGuiRender(m_selection_context);
@@ -187,7 +204,7 @@ void Editor::drawViewport() {
     if (entity_id == -1) {
       m_selection_context = std::monostate{};
     } else {
-      m_selection_context = Entity(static_cast<entt::entity>(entity_id), m_active_scene);
+      m_selection_context = Entity(static_cast<entt::entity>(entity_id), m_active_scene.get());
     }
   }
 
@@ -201,7 +218,6 @@ void Editor::handleShortcuts() {
 
   if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S)) {
     m_context.project.save();
-    m_serializer.serialize(m_context.project.getConfig().start_scene);
   }
   if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O)) {
     m_context.project.load();
@@ -211,13 +227,13 @@ void Editor::handleShortcuts() {
   }
   if (ImGui::IsKeyPressed(ImGuiKey_F)) {
     // Focus on selected object
-    if (std::holds_alternative<Entity>(m_selection_context)) {
-      auto entity = std::get<Entity>(m_selection_context);
-      if (entity) {
-        auto tc = entity.getComponent<TransformComponent>();
-        m_editor_camera.focusEntity(tc.Translation, glm::compMax(tc.Scale) * 5);
-      }
-    }
+    // if (std::holds_alternative<Entity>(m_selection_context)) {
+    //   auto entity = std::get<Entity>(m_selection_context);
+    //   if (entity) {
+    //     auto tc = entity.getComponent<TransformComponent>();
+    //     m_editor_camera.focusEntity(tc.Translation, glm::compMax(tc.Scale) * 5);
+    //   }
+    // }
   }
 }
 

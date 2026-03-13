@@ -74,7 +74,7 @@ bool Project::deserialize(const std::filesystem::path& path) {
 
   m_config.name = node["Project"]["Name"].as<std::string>();
   m_config.path = node["Project"]["Path"].as<std::string>();
-  m_config.start_scene = node["Project"]["StartScene"].as<std::string>();
+  m_config.start_scene = node["Project"]["StartScene"].as<UUID>();
 
   return true;
 }
