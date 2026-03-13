@@ -27,6 +27,11 @@ class Entity {
     return m_registry->all_of<T>(m_handle);
   }
 
+  template <typename T>
+  void removeComponent() {
+    m_registry->remove<T>(m_handle);
+  }
+
   operator bool() const { return m_handle != entt::null; }
   operator entt::entity() const { return m_handle; }
   operator uint32_t() const { return static_cast<uint32_t>(m_handle); }

@@ -178,10 +178,20 @@ void PropertiesPanel::drawComponents(Entity entity, Scene* scene) {
   ImGui::PopItemWidth();
 
   forEachComponentType([&]<typename T>() {
-    if constexpr (T::user_editable)
+    if constexpr (T::user_editable) {
       if (auto* c = entity.tryGetComponent<T>()) {
-        if (ImGui::CollapsingHeader(T::name.data(), ImGuiTreeNodeFlags_DefaultOpen)) T::drawUI(*c, m_context);
+        bool keep_component = true;
+        bool* p_visible = T::user_removable ? &keep_component : nullptr;
+        bool open = ImGui::CollapsingHeader(T::name.data(), p_visible, ImGuiTreeNodeFlags_DefaultOpen);
+        if constexpr (T::user_removable)
+          if (!keep_component) {
+            entity.removeComponent<T>();
+            open = false;
+          }
+
+        if (open) T::drawUI(*c, m_context);
       }
+    }
   });
 }
 
