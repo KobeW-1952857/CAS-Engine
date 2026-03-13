@@ -9,6 +9,7 @@
 #include "core/asset_manager.h"
 #include "core/uuid.h"
 #include "editor/selection_context.h"
+#include "scene/component_type_list.h"
 #include "scene/components.h"
 #include "scene/entity.h"
 
@@ -143,14 +144,23 @@ void PropertiesPanel::drawMaterial(const std::shared_ptr<Material>& material, As
 
 // --- drawComponents -------------------------------------------------------------------------------------------------
 
-void PropertiesPanel::drawComponents(Entity entity) {
-  if (!entity) return;
+template <typename T>
+void PropertiesPanel::addComponentToEntity(Entity entity, Scene* scene) {
+  if constexpr (requires(Scene& s) { T::create(s); })
+    entity.addComponent<T>(T::create(scene));
+  else
+    entity.addComponent<T>();
+  ;
+}
+
+void PropertiesPanel::drawComponents(Entity entity, Scene* scene) {
+  if (!entity || !scene) return;
   auto& assets = m_context.assets;
 
   if (entity.hasComponent<TagComponent>()) {
-    auto& tag = entity.getComponent<TagComponent>().Tag;
+    auto& tag = entity.getComponent<TagComponent>().tag;
     if (ImGui::InputText("##Tag", &tag)) {
-      entity.getComponent<TagComponent>().Tag = tag;
+      entity.getComponent<TagComponent>().tag = tag;
     }
   }
   ImGui::SameLine();
@@ -158,63 +168,28 @@ void PropertiesPanel::drawComponents(Entity entity) {
   if (ImGui::Button("+")) ImGui::OpenPopup("Add component");
 
   if (ImGui::BeginPopup("Add component")) {
-    displayAddComponent<MeshComponent>(entity);
-    displayAddComponent<MaterialComponent>(entity);
+    forEachComponentType([&]<typename T>() {
+      if constexpr (T::user_addable)
+        if (!entity.hasComponent<T>())
+          if (ImGui::MenuItem(T::name.data())) addComponentToEntity<T>(entity, scene);
+    });
     ImGui::EndPopup();
   }
   ImGui::PopItemWidth();
 
-  DrawComponent<TransformComponent>(entity, [](auto& component) {
-    ImGui::DragFloat3("Translation", glm::value_ptr(component.Translation));
-    ImGui::DragFloat3("Rotation", glm::value_ptr(component.Rotation));
-    ImGui::DragFloat3("Scale", glm::value_ptr(component.Scale));
-  });
-
-  DrawComponent<MeshComponent>(entity, [&assets](MeshComponent& component) {
-    ImGui::Text("Mesh");
-    ImGui::SameLine();
-    auto mesh_assets = assets.getAssetsMetadataOfType<Mesh>();
-    auto current_name =
-        mesh_assets.contains(component.mesh_handle) ? mesh_assets[component.mesh_handle].filepath.stem().c_str() : "";
-
-    if (ImGui::BeginCombo("##mesh", current_name)) {
-      for (const auto& [id, meta] : mesh_assets) {
-        bool selected = id == component.mesh_handle;
-        auto name = meta.filepath.stem().c_str();
-
-        if (ImGui::Selectable(name, selected)) {
-          component.mesh_handle = id;
-        }
+  forEachComponentType([&]<typename T>() {
+    if constexpr (T::user_editable)
+      if (auto* c = entity.tryGetComponent<T>()) {
+        if (ImGui::CollapsingHeader(T::name.data(), ImGuiTreeNodeFlags_DefaultOpen)) T::drawUI(*c, m_context);
       }
-      ImGui::EndCombo();
-    }
-  });
-
-  DrawComponent<MaterialComponent>(entity, [&assets](MaterialComponent& component) {
-    auto materials = assets.getAssetsMetadataOfType<Material>();
-    auto material = assets.getAsset<Material>(component.material_handle);
-    auto current_name = material ? assets.getAssetMetadata(material->handle).filepath.stem().c_str() : "";
-
-    if (ImGui::BeginCombo("##material", current_name)) {
-      for (const auto& [id, meta] : materials) {
-        bool selected = id == component.material_handle;
-        auto name = meta.filepath.stem().c_str();
-
-        if (ImGui::Selectable(name, selected)) {
-          component.material_handle = id;
-          material = assets.getAsset<Material>(id);
-        }
-      }
-      ImGui::EndCombo();
-    }
   });
 }
 
 // --- ImGui -----------------------------------------------------------------------------------------------------------
-void PropertiesPanel::onImGuiRender(SelectionContext& selection_context) {
+void PropertiesPanel::onImGuiRender(SelectionContext& selection_context, Scene* active_scene) {
   ImGui::Begin("Properties");
   if (std::holds_alternative<Entity>(selection_context)) {
-    drawComponents(std::get<Entity>(selection_context));
+    drawComponents(std::get<Entity>(selection_context), active_scene);
   } else if (std::holds_alternative<UUID>(selection_context)) {
     auto id = std::get<UUID>(selection_context);
     auto& meta = m_context.assets.getAssetMetadata(id);

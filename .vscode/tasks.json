@@ -54,7 +54,7 @@
 			"presentation": {
 				"reveal": "silent",
 				"panel": "shared",
-				"clear": false
+				"clear": true
 			},
 			"problemMatcher": {
 				"owner": "cpp",

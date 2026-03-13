@@ -7,7 +7,7 @@ class EditorCamera {
   EditorCamera() { updateProjection(); };
   EditorCamera(float fov, float aspect_ratio, float near_clip, float far_clip);
 
-  void onUpdate(float dt);
+  void onUpdate(float dt, bool allow_keyboard);
   void focusEntity(const glm::vec3& position, const float distance);
   void setViewportSize(float width, float height);
 
@@ -27,7 +27,7 @@ class EditorCamera {
   void updateProjection();
   void updateView();
 
-  void freeFly(const glm::vec2& delta, float dt);
+  void freeFly(const glm::vec2& delta, float dt, bool allow_keyboard);
   void mousePan(const glm::vec2& delta);
   void mouseRotate(const glm::vec2& delta);
   void mouseZoom(float delta);

@@ -10,6 +10,7 @@ struct AppContext {
   AssetManager assets{filesystem};
   Renderer renderer;
   Project project{filesystem, assets};
+  
 
   // Non-copyable and non-movable: members hold references to each other.
   AppContext() = default;

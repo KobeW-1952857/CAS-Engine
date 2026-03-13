@@ -10,15 +10,16 @@
 EditorCamera::EditorCamera(float fov, float aspect_ratio, float near_clip, float far_clip)
     : m_fov(fov), m_aspect_ratio(aspect_ratio), m_near_clip(near_clip), m_far_clip(far_clip) {
   updateProjection();
+  updateView();
 }
 
-void EditorCamera::onUpdate(float dt) {
+void EditorCamera::onUpdate(float dt, bool allow_keyboard) {
   glm::vec2 mouse = Input::getMousePosition();
   glm::vec2 delta = (mouse - m_initial_mouse_position) * 0.003f;
   m_initial_mouse_position = mouse;
 
   if (Input::isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
-    freeFly(delta, dt);
+    freeFly(delta, dt, allow_keyboard);
   } else if (Input::isMouseButtonPressed(GLFW_MOUSE_BUTTON_MIDDLE)) {
     mousePan(delta);
   } else if (Input::isKeyPressed(GLFW_KEY_LEFT_ALT) && Input::isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
@@ -48,15 +49,16 @@ void EditorCamera::updateView() {
 }
 
 void EditorCamera::setViewportSize(float width, float height) {
-  // if (width == 0.0f || height == 0.0f) return;
   if (width == m_viewport_width && height == m_viewport_height) return;
   m_viewport_width = width;
   m_viewport_height = height;
   updateProjection();
 }
 
-void EditorCamera::freeFly(const glm::vec2& delta, float dt) {
+void EditorCamera::freeFly(const glm::vec2& delta, float dt, bool allow_keyboard) {
   mouseRotate(delta);
+
+  if (!allow_keyboard) return;
 
   float current_speed = Input::isKeyPressed(GLFW_KEY_LEFT_SHIFT) ? m_fast_speed : m_normal_speed;
   float velocity = current_speed * dt;

@@ -5,6 +5,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <glm/gtx/string_cast.hpp>
 #include <variant>
 
 #include "core/asset_manager.h"
@@ -12,7 +13,7 @@
 #include "core/project.h"
 #include "renderer/framebuffer.h"
 #include "renderer/renderer.h"
-#include "scene/components.h"
+#include "renderer/systems/mesh_renderer_system.h"
 #include "scene/entity.h"
 #include "scene/scene.h"
 #include "utils/utils.h"
@@ -31,11 +32,13 @@ Editor::Editor(const std::vector<std::string>& args)
 }
 
 std::shared_ptr<Scene> Editor::makeScene() { return std::make_shared<Scene>(&m_context.assets, &m_context.renderer); }
+
 void Editor::openScene(UUID handle) {
   auto scene = m_context.assets.getAsset<Scene>(handle);
   if (!scene) return;
   setContext(scene);
-  // scene->init(&m_context.assets, &m_context.renderer);
+
+  scene->registerRenderSystem(std::make_unique<MeshRenderSystem>());
 }
 
 void Editor::init() {
@@ -104,7 +107,8 @@ void Editor::setContext(const std::shared_ptr<Scene>& scene) {
 
 void Editor::onUpdate(float dt) {
   if (m_viewport_focused || m_viewport_hovered) {
-    m_editor_camera.onUpdate(dt);
+    bool allow_keyboard = ImGui::GetIO().WantCaptureKeyboard;
+    m_editor_camera.onUpdate(dt, allow_keyboard);
   }
 
   m_framebuffer->resize(static_cast<uint32_t>(m_viewport_size.x), static_cast<uint32_t>(m_viewport_size.y));
@@ -166,7 +170,7 @@ void Editor::drawDockspace() {
 
   m_scene_hierarchy_panel.onImGuiRender(m_selection_context);
   m_asset_browser_panel.onImGuiRender(m_selection_context);
-  m_properties_panel.onImGuiRender(m_selection_context);
+  m_properties_panel.onImGuiRender(m_selection_context, m_active_scene.get());
   m_console_panel.onImGuiRender();
 }
 
@@ -174,7 +178,7 @@ void Editor::drawViewport() {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
   ImGui::Begin("Viewport");
   m_viewport_focused = ImGui::IsWindowFocused();
-  m_viewport_hovered = ImGui::IsWindowHovered();
+  m_viewport_hovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
 
   ImVec2 viewport_panel_size = ImGui::GetContentRegionAvail();
   if (m_viewport_size.x != viewport_panel_size.x || m_viewport_size.y != viewport_panel_size.y) {
@@ -204,7 +208,7 @@ void Editor::drawViewport() {
     if (entity_id == -1) {
       m_selection_context = std::monostate{};
     } else {
-      m_selection_context = Entity(static_cast<entt::entity>(entity_id), m_active_scene.get());
+      m_selection_context = m_active_scene->getEntityFromHandle(static_cast<entt::entity>(entity_id));
     }
   }
 
@@ -243,6 +247,7 @@ void Editor::drawDebugPanel() {
   ImVec2 size(256, 144);
   uint32_t debug_tex = m_framebuffer->getDebugEntityIDTextureID();
   ImGui::Text("Entity ID buffer");
+  // NOLINTNEXTLINE
   ImGui::Image(reinterpret_cast<ImTextureID>(debug_tex), size, ImVec2(0, 1), ImVec2(1, 0));
 
   // Legend

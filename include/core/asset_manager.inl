@@ -77,7 +77,6 @@ UUID AssetManager::createNewAsset(const std::filesystem::path& virtual_directory
   auto new_asset = std::make_shared<T>();
   AssetTraits<T>::initializeNew(*new_asset, *this);
 
-  // new_asset->serialize(absolute_path);
   AssetTraits<T>::save(*new_asset, absolute_path, *this);
 
   UUID new_id;
@@ -102,11 +101,14 @@ template <typename T>
 std::shared_ptr<T> AssetManager::loadAsset(UUID handle) {
   const auto& metadata = s_asset_registry[handle];
   auto path = m_filesystem.resolvePath(metadata.filepath);
+  Nexus::Logger::debug("Loading asset {} at path {}", static_cast<uint64_t>(handle), metadata.filepath.string());
 
   std::shared_ptr<T> asset = AssetTraits<T>::load(path, *this);
   if (!asset) return nullptr;
 
+  Nexus::Logger::debug("Asset {} loaded, adding to registry", static_cast<uint64_t>(handle));
   asset->handle = handle;
+  // s_loaded_assets.insert(handle, asset);
   s_loaded_assets[handle] = asset;
   s_asset_registry[handle].is_loaded = true;
   return std::dynamic_pointer_cast<T>(asset);

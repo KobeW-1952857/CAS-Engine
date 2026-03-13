@@ -33,7 +33,7 @@ void SceneHierarchy::setContext(const std::shared_ptr<Scene>& context) { m_conte
 void SceneHierarchy::drawEntityNode(Entity entity, SelectionContext& selection_context, Entity& entity_to_delete) {
   if (!entity) return;
 
-  auto& tag = entity.getComponent<TagComponent>().Tag;
+  auto& tag = entity.getComponent<TagComponent>().tag;
 
   bool is_selected = false;
   if (const Entity* selected = std::get_if<Entity>(&selection_context)) {

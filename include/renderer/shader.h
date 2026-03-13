@@ -12,6 +12,7 @@
 #include "core/asset_traits.h"
 
 class FileSystem;
+class AssetManager;
 
 struct UniformInfo {
   std::string name;

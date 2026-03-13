@@ -5,19 +5,17 @@
 #include <cstdint>
 #include <fstream>
 #include <glm/gtx/string_cast.hpp>
-#include <tuple>
 
+#include "Nexus/Log.h"
 #include "core/asset_manager.h"
-#include "core/asset_traits.h"
 #include "core/uuid.h"
 #include "editor/editor_camera.h"
 #include "renderer/material.h"
+#include "renderer/render_context.h"
 #include "renderer/renderer.h"
-#include "scene/component_traits.h"
 #include "scene/component_type_list.h"
 #include "scene/components.h"
 #include "scene/entity.h"
-#include "utils/yaml_extension.h"
 
 Scene::Scene() { type = AssetType::Scene; }
 Scene::Scene(AssetManager* assets, Renderer* renderer) : m_assets(assets), m_renderer(renderer) {
@@ -32,13 +30,15 @@ void Scene::init(AssetManager* assets, Renderer* renderer) {
 Entity Scene::createEntity(const std::string& name) { return createEntity(UUID(), name); }
 
 Entity Scene::createEntity(UUID id, const std::string& name) {
-  auto entity = Entity(m_registry.create(), this);
+  auto entity = Entity(m_registry.create(), &m_registry);
 
   entity.addComponent<TagComponent>(name.empty() ? "Empty entity" : name);
   entity.addComponent<IDComponent>(id);
   entity.addComponent<TransformComponent>();
 
   m_entity_map.emplace(id, entity);
+
+  modified = true;
 
   return entity;
 }
@@ -49,12 +49,14 @@ void Scene::destroyEntity(Entity entity) {
   UUID id = entity.getComponent<IDComponent>().ID;
   m_registry.destroy(entity);
   m_entity_map.erase(id);
+
+  modified = true;
 }
 
-std::vector<Entity> Scene::getEntities() {
+std::vector<Entity> Scene::getEntities() const {
   std::vector<Entity> entities;
   for (auto entity_id : m_registry.view<entt::entity>()) {
-    Entity entity(entity_id, this);
+    Entity entity(entity_id, const_cast<entt::registry*>(&m_registry));
     entities.push_back(entity);
   }
   return entities;
@@ -65,6 +67,10 @@ Entity Scene::getEntity(UUID id) const {
   return m_entity_map.at(id);
 }
 
+Entity Scene::getEntityFromHandle(entt::entity handle) const {
+  return Entity(handle, const_cast<entt::registry*>(&m_registry));
+}
+
 void Scene::onRender(Entity selected_entity, const EditorCamera& camera, const glm::vec2& viewport_size) {
   Renderer::SceneData scene_data{.viewport_size = viewport_size,
                                  .cam_pos = camera.getPosition(),
@@ -72,32 +78,16 @@ void Scene::onRender(Entity selected_entity, const EditorCamera& camera, const g
                                  .projection = camera.getProjectionMatrix(),
                                  .view = camera.getViewMatrix()};
   m_renderer->beginScene(scene_data);
-  auto view = m_registry.view<TransformComponent, MaterialComponent, MeshComponent>();
+
+  RenderContext ctx{*m_renderer, *m_assets, selected_entity, *this};
 
   m_renderer->beginColorPass();
-  for (auto entity : view) {
-    Entity e(entity, this);
-    auto mesh = m_assets->getAsset<Mesh>(e.getComponent<MeshComponent>().mesh_handle);
-    auto material = m_assets->getAsset<Material>(e.getComponent<MaterialComponent>().material_handle);
-    auto transform = e.getComponent<TransformComponent>().getTransform();
+  for (auto& system : m_render_systems) system->onColorPass(m_registry, ctx);
 
-    m_renderer->submit(mesh, material, transform, e == selected_entity);
-  }
-
-  if (selected_entity && selected_entity.hasComponent<MeshComponent>()) {
-    auto& tc = selected_entity.getComponent<TransformComponent>();
-    auto mesh = m_assets->getAsset<Mesh>(selected_entity.getComponent<MeshComponent>().mesh_handle);
-    m_renderer->submitOutline(mesh, tc.getTransform());
-  }
+  for (auto& system : m_render_systems) system->onOutlinePass(m_registry, ctx);
 
   m_renderer->beginEntityIDPass();
-  for (auto entity : view) {
-    Entity e(entity, this);
-    auto mesh = m_assets->getAsset<Mesh>(e.getComponent<MeshComponent>().mesh_handle);
-    auto transform = e.getComponent<TransformComponent>().getTransform();
-
-    m_renderer->submitEntityID(mesh, transform, static_cast<int>(static_cast<uint32_t>(e)));
-  }
+  for (auto& system : m_render_systems) system->onEntityIDPass(m_registry, ctx);
 
   m_renderer->endScene();
 }
@@ -138,11 +128,6 @@ std::shared_ptr<Scene> AssetTraits<Scene>::load(const std::filesystem::path& pat
     return nullptr;
   }
 
-  if (!data["Scene"]) {
-    Nexus::Logger::error("Invalid scene file '{}': Missing 'Scene' node.", path.string());
-    return nullptr;
-  }
-
   Nexus::Logger::debug("Deserializing scene '{}'", path.stem().string());
 
   auto entities = data["Entities"];
@@ -153,10 +138,9 @@ std::shared_ptr<Scene> AssetTraits<Scene>::load(const std::filesystem::path& pat
       std::string name = entity["TagComponent"] ? entity["TagComponent"]["Tag"].as<std::string>() : "";
 
       Nexus::Logger::trace("Deserializing entity with ID = {}, Name = {}", static_cast<uint64_t>(uuid), name);
-      Entity deserializedEntity = scene->createEntity(uuid, name);
+      Entity deserialized_entity = scene->createEntity(uuid, name);
 
-      std::apply([&](auto... tags) { (ComponentTraits<decltype(tags)>::deserialize(entity, deserializedEntity), ...); },
-                 AllComponentsTypes{});
+      forEachComponentType([&]<typename T>() { T::deserialize(entity, deserialized_entity); });
     }
   }
 
@@ -165,12 +149,17 @@ std::shared_ptr<Scene> AssetTraits<Scene>::load(const std::filesystem::path& pat
 
 static void serializeEntity(YAML::Emitter& out, Entity entity) {
   out << YAML::BeginMap;
-  std::apply([&](auto... tags) { (ComponentTraits<decltype(tags)>::serialize(out, entity), ...); },
-             AllComponentsTypes{});
+
+  Nexus::Logger::debug("Serializing entity {}", entity.getComponent<TagComponent>().tag);
+
+  forEachComponentType([&]<typename T>() {
+    if (auto* c = entity.tryGetComponent<T>()) T::serialize(out, *c);
+  });
+
   out << YAML::EndMap;
 }
 
-void AssetTraits<Scene>::save(Scene& scene, const std::filesystem::path& path, AssetManager assets) {
+void AssetTraits<Scene>::save(const Scene& scene, const std::filesystem::path& path, AssetManager& assets) {
   Nexus::Logger::debug("Serializing scene to '{}", path.string());
 
   YAML::Emitter out;

@@ -45,6 +45,8 @@ class Mesh : public Asset {
   void computeSmoothedNormals();
 };
 
+class AssetManager;
+
 template <>
 struct AssetTraits<Mesh> {
   static constexpr AssetType type = AssetType::Mesh;

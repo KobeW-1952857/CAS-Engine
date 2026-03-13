@@ -46,9 +46,9 @@ bool SceneSerializer::deserialize(const std::string& filepath) {
       auto transformComponent = entity["TransformComponent"];
       if (transformComponent) {
         auto& tc = deserializedEntity.getComponent<TransformComponent>();
-        tc.Translation = transformComponent["Translation"].as<glm::vec3>();
-        tc.Rotation = transformComponent["Rotation"].as<glm::vec3>();
-        tc.Scale = transformComponent["Scale"].as<glm::vec3>();
+        tc.translation = transformComponent["Translation"].as<glm::vec3>();
+        tc.rotation = transformComponent["Rotation"].as<glm::vec3>();
+        tc.scale = transformComponent["Scale"].as<glm::vec3>();
       }
 
       auto meshComponent = entity["MeshComponent"];
@@ -106,9 +106,9 @@ void SceneSerializer::serializeEntity(YAML::Emitter& out, Entity entity) {
 
   if (auto* transform = m_scene->m_registry.try_get<TransformComponent>(entity)) {
     out << YAML::Key << "TransformComponent" << YAML::BeginMap;
-    out << YAML::Key << "Translation" << YAML::Value << transform->Translation;
-    out << YAML::Key << "Rotation" << YAML::Value << transform->Rotation;
-    out << YAML::Key << "Scale" << YAML::Value << transform->Scale;
+    out << YAML::Key << "Translation" << YAML::Value << transform->translation;
+    out << YAML::Key << "Rotation" << YAML::Value << transform->rotation;
+    out << YAML::Key << "Scale" << YAML::Value << transform->scale;
     out << YAML::EndMap;
   }
 
