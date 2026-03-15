@@ -92,29 +92,6 @@ void Scene::onRender(Entity selected_entity, const EditorCamera& camera, const g
   m_renderer->endScene();
 }
 
-void Scene::renderEntity(Entity entity, const glm::mat4& view_proj) {
-  if (!entity || !entity.hasComponent<MeshComponent>() || !entity.hasComponent<MaterialComponent>()) return;
-  auto& tc = entity.getComponent<TransformComponent>();
-  auto& mc = entity.getComponent<MeshComponent>();
-  auto& matc = entity.getComponent<MaterialComponent>();
-
-  auto mesh = m_assets->getAsset<Mesh>(mc.mesh_handle);
-  auto material = m_assets->getAsset<Material>(matc.material_handle);
-
-  if (mesh && material) {
-    material->setProperty("u_proj_view", view_proj);
-    material->setProperty("u_model", tc.getTransform());
-    material->setProperty("u_entity_id", static_cast<int>(static_cast<uint32_t>(entity)));
-
-    material->bind();
-    mesh->render();
-  }
-}
-
-void Scene::renderEntityOutline(Entity entity, const glm::mat4& view_proj) {
-  if (!entity || !entity.hasComponent<MeshComponent>()) return;
-}
-
 void Scene::onImGuiRender() {}
 
 std::shared_ptr<Scene> AssetTraits<Scene>::load(const std::filesystem::path& path, AssetManager& assets) {

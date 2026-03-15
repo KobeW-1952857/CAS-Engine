@@ -2,6 +2,7 @@
 
 #include <glad/gl.h>
 
+#include "renderer/primitives/drawable.h"
 #include "utils/filesystem.h"
 #include "utils/utils.h"
 
@@ -40,11 +41,7 @@ void Renderer::beginScene(SceneData scene_data) {
       .light_pos = light_pos,
       .viewport_size = scene_data.viewport_size,
   };
-
-  glBindBuffer(GL_UNIFORM_BUFFER, s_per_frame_ubo);
-  glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PerFrameUBO), &frame_data);
-  glBindBuffer(GL_UNIFORM_BUFFER, 0);
-  checkOpenGLError("Renderer::beginScene");
+  uploadPerFrameUBO(frame_data);
 }
 
 void Renderer::beginColorPass() {
@@ -69,46 +66,59 @@ void Renderer::endScene() {
   checkOpenGLError("Renderer::endScene");
 }
 
-void Renderer::submit(const std::shared_ptr<Mesh>& mesh, const std::shared_ptr<Material>& material,
-                      const glm::mat4& transform, bool mark_stencil) {
-  if (!mesh || !material) return;
-
-  if (mark_stencil) {
-    glStencilFunc(GL_ALWAYS, 1, 0xFF);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-  } else {
-    glStencilFunc(GL_ALWAYS, 0, 0xFF);
-    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-  }
-
-  PerDrawUBO draw_data{.model = transform};
-  glBindBuffer(GL_UNIFORM_BUFFER, s_per_draw_ubo);
-  glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PerDrawUBO), &draw_data);
+void Renderer::uploadPerFrameUBO(const PerFrameUBO& data) {
+  glBindBuffer(GL_UNIFORM_BUFFER, s_per_frame_ubo);
+  glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PerFrameUBO), &data);
   glBindBuffer(GL_UNIFORM_BUFFER, 0);
-  material->bind();
-  mesh->render();
-
-  checkOpenGLError("renderer::submit");
+  checkOpenGLError("Renderer::uploadPerFrameUBO");
 }
 
-void Renderer::submitEntityID(const std::shared_ptr<Mesh>& mesh, const glm::mat4& transform, int entity_id) {
-  if (!mesh) return;
-  PerDrawUBO draw_data{.model = transform};
-
+void Renderer::uploadPerDrawUBO(const PerDrawUBO& data) {
   glBindBuffer(GL_UNIFORM_BUFFER, s_per_draw_ubo);
-  glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PerDrawUBO), &draw_data);
+  glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PerDrawUBO), &data);
   glBindBuffer(GL_UNIFORM_BUFFER, 0);
+  checkOpenGLError("Renderer::uploadPerDrawUBO");
+}
 
+void Renderer::setStencilWrite(int ref) {
+  glStencilFunc(GL_ALWAYS, ref, 0xFF);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+}
+
+void Renderer::clearStencilWrite() {
+  glStencilFunc(GL_ALWAYS, 0, 0xFF);
+  glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+}
+
+// void Renderer::submit(const std::shared_ptr<Mesh>& mesh, const std::shared_ptr<Material>& material,
+//                       const glm::mat4& transform, bool mark_stencil) {
+//   if (!mesh || !material) return;
+
+//   if (mark_stencil) {
+//     glStencilFunc(GL_ALWAYS, 1, 0xFF);
+//     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+//   } else {
+//     glStencilFunc(GL_ALWAYS, 0, 0xFF);
+//     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+//   }
+
+//   PerDrawUBO draw_data{.model = transform};
+//   uploadPerDrawUBO(draw_data);
+
+//   material->bind();
+//   mesh->draw();
+
+//   checkOpenGLError("renderer::submit");
+// }
+
+void Renderer::submitEntityID(const IDrawable& drawable, int entity_id) {
   s_entity_id_shader->use();
   s_entity_id_shader->setInt("u_entity_id", entity_id);
-  mesh->render();
+  drawable.draw();
   checkOpenGLError("renderer::submitEntityID");
 }
 
-void Renderer::submitOutline(const std::shared_ptr<Mesh>& mesh, const glm::mat4& transform, const glm::vec3& color,
-                             float outline_width) {
-  if (!mesh || !s_outline_shader) return;
-
+void Renderer::submitOutline(const IDrawable& drawable, const glm::vec3& color, float outline_width) {
   glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
   glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
   glStencilMask(0x00);
@@ -117,14 +127,8 @@ void Renderer::submitOutline(const std::shared_ptr<Mesh>& mesh, const glm::mat4&
   s_outline_shader->use();
   s_outline_shader->setFloat("u_outline_width", outline_width);
   s_outline_shader->setVec3("u_outline_color", color);
-  PerDrawUBO draw_data{
-      .model = transform,
-  };
-  glBindBuffer(GL_UNIFORM_BUFFER, s_per_draw_ubo);
-  glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(PerDrawUBO), &draw_data);
-  glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
-  mesh->render();
+  drawable.draw();
 
   glDisable(GL_STENCIL_TEST);
   glStencilMask(0xFF);

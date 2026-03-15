@@ -7,6 +7,7 @@
 #include "Nexus/Window/GLFWWindow.h"
 #include "core/asset.h"
 #include "core/asset_traits.h"
+#include "renderer/primitives/drawable.h"
 #include "utils/utils.h"
 
 struct Vertex {
@@ -17,13 +18,14 @@ struct Vertex {
   Direction smoothed_normal;
 };
 
-class Mesh : public Asset {
+class Mesh : public Asset, public IDrawable {
  public:
   Mesh() { type = AssetType::Mesh; }
-  Mesh(std::string filepath);
+  explicit Mesh(std::string filepath);
   Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indices);
 
   void render();
+  void draw() const override;
 
   const std::string& getName() const { return m_name; }
   const std::string& getFilePath() const { return m_filepath; }

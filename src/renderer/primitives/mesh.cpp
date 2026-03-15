@@ -1,4 +1,4 @@
-#include "renderer/mesh.h"
+#include "renderer/primitives/mesh.h"
 
 #include "Nexus/Log.h"
 #include "Nexus/Window/GLFWWindow.h"
@@ -79,7 +79,7 @@ Mesh::Mesh(const std::vector<Vertex>& vertices, const std::vector<GLuint>& indic
   initOpenGLBuffers();
 }
 
-void Mesh::render() {
+void Mesh::draw() const {
   if (!m_initialized) return;
 
   glBindVertexArray(m_vao);

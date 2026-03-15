@@ -35,8 +35,6 @@ class Scene : public Asset {
 
   void onUpdate(float dt);
   void onRender(Entity selected_entity, const EditorCamera& camera, const glm::vec2& viewport_size);
-  void renderEntity(Entity entity, const glm::mat4& view_proj);
-  void renderEntityOutline(Entity entity, const glm::mat4& view_proj);
   void onImGuiRender();
 
  private:

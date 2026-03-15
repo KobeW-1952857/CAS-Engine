@@ -16,7 +16,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(yaml-cpp)
 
 add_executable(CASEngine
-	src/core/asset_manager.cpp
+    src/core/asset_manager.cpp
     src/core/input.cpp
     src/core/project.cpp
     src/core/uuid.cpp
@@ -24,22 +24,22 @@ add_executable(CASEngine
     src/editor/editor_camera.cpp
     src/editor/panels/asset_browser.cpp
     src/editor/panels/console.cpp
-    src/editor/panels/scene_hierarchy.cpp
     src/editor/panels/properties.cpp
-    src/main.cpp
+    src/editor/panels/scene_hierarchy.cpp
     src/renderer/camera.cpp
     src/renderer/framebuffer.cpp
     src/renderer/material.cpp
-    src/renderer/mesh.cpp
+    src/renderer/primitives/mesh.cpp
+    src/renderer/renderer.cpp
     src/renderer/shader.cpp
+    src/renderer/systems/mesh_renderer_system.cpp
     src/renderer/tesselation_shader.cpp
     src/renderer/texture.cpp
-    src/renderer/renderer.cpp
-    src/renderer/systems/mesh_renderer_system.cpp
     src/scene/scene.cpp
-    # src/scene/scene_serializer.cpp
     src/utils/file_dialog.mm
     src/utils/utils.cpp
+
+    src/main.cpp
 )
 
 set_target_properties(CASEngine PROPERTIES

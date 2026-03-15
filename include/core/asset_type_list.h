@@ -3,7 +3,7 @@
 #include <tuple>
 
 #include "renderer/material.h"
-#include "renderer/mesh.h"
+#include "renderer/primitives/mesh.h"
 #include "renderer/shader.h"
 #include "scene/scene.h"
 
