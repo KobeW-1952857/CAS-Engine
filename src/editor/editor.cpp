@@ -13,6 +13,8 @@
 #include "core/project.h"
 #include "renderer/framebuffer.h"
 #include "renderer/renderer.h"
+#include "renderer/systems/bezier_renderer_system.h"
+#include "renderer/systems/line_renderer_system.h"
 #include "renderer/systems/mesh_renderer_system.h"
 #include "scene/entity.h"
 #include "scene/scene.h"
@@ -39,6 +41,8 @@ void Editor::openScene(UUID handle) {
   setContext(scene);
 
   scene->registerRenderSystem(std::make_unique<MeshRenderSystem>());
+  scene->registerRenderSystem(std::make_unique<LineRendererSystem>(m_context.filesystem));
+  scene->registerRenderSystem(std::make_unique<BezierRendererSystem>(m_context.filesystem));
 }
 
 void Editor::init() {

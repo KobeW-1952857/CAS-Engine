@@ -2,7 +2,7 @@
 
 #include <glad/gl.h>
 
-#include "renderer/primitives/drawable.h"
+#include "renderer/drawable.h"
 #include "utils/filesystem.h"
 #include "utils/utils.h"
 

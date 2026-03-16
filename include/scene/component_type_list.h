@@ -22,9 +22,8 @@ concept Component =
       { T::drawUI(mut, ctx) } -> std::same_as<void>;
     };
 
-// using AllComponentsTypes = std::tuple<MaterialComponent, BezierCurveComponent>;
-
-using AllComponentTypes = std::tuple<IDComponent, TagComponent, TransformComponent, MeshComponent, MaterialComponent>;
+using AllComponentTypes = std::tuple<IDComponent, TagComponent, TransformComponent, MeshComponent, MaterialComponent,
+                                     LineComponent, BezierComponent>;
 
 namespace detail {
 template <typename T>
@@ -61,6 +60,7 @@ static_assert(detail::validateComponent<TagComponent>());
 static_assert(detail::validateComponent<TransformComponent>());
 static_assert(detail::validateComponent<MeshComponent>());
 static_assert(detail::validateComponent<MaterialComponent>());
+static_assert(detail::validateComponent<LineComponent>());
 
 static_assert(detail::AllSatisfyComponent<AllComponentTypes>::value,
               "All types in AllComponentTypes must satisfy the Component concept");

@@ -7,7 +7,7 @@
 #include "Nexus/Window/GLFWWindow.h"
 #include "core/asset.h"
 #include "core/asset_traits.h"
-#include "renderer/primitives/drawable.h"
+#include "renderer/drawable.h"
 #include "utils/utils.h"
 
 struct Vertex {

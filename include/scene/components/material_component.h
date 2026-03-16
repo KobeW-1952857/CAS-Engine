@@ -2,10 +2,8 @@
 
 #include <string_view>
 
-#include "core/app_context.h"
 #include "core/uuid.h"
 #include "scene/component_defaults.h"
-#include "scene/entity.h"
 
 struct MaterialComponent : ComponentDefaults {
   static constexpr std::string_view name = "Material";

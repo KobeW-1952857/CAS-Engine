@@ -16,6 +16,7 @@
 #include "scene/component_type_list.h"
 #include "scene/components.h"
 #include "scene/entity.h"
+#include "utils/utils.h"
 
 Scene::Scene() { type = AssetType::Scene; }
 Scene::Scene(AssetManager* assets, Renderer* renderer) : m_assets(assets), m_renderer(renderer) {
@@ -83,11 +84,14 @@ void Scene::onRender(Entity selected_entity, const EditorCamera& camera, const g
 
   m_renderer->beginColorPass();
   for (auto& system : m_render_systems) system->onColorPass(m_registry, ctx);
+  checkOpenGLError("Scene::onRender color pass");
 
   for (auto& system : m_render_systems) system->onOutlinePass(m_registry, ctx);
+  checkOpenGLError("Scene::onRender outline pass");
 
   m_renderer->beginEntityIDPass();
   for (auto& system : m_render_systems) system->onEntityIDPass(m_registry, ctx);
+  checkOpenGLError("Scene::onRender entity ID pass");
 
   m_renderer->endScene();
 }
