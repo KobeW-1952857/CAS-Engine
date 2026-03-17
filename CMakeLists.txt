@@ -38,6 +38,7 @@ add_executable(CASEngine
     src/renderer/tesselation_shader.cpp
     src/renderer/texture.cpp
     src/scene/scene.cpp
+    src/scene/systems/line_follower_system.cpp
     src/utils/file_dialog.mm
     src/utils/utils.cpp
 

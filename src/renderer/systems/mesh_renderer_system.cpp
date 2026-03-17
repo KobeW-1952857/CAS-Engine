@@ -38,6 +38,7 @@ void MeshRenderSystem::onEntityIDPass(entt::registry& registry, const RenderCont
   for (auto entity : view) {
     auto mesh = ctx.assets.getAsset<Mesh>(view.get<MeshComponent>(entity).mesh_handle);
     auto transform = view.get<TransformComponent>(entity).getTransform();
+    if (!mesh) continue;
 
     Renderer::PerDrawUBO draw_data{.model = transform};
     ctx.renderer.uploadPerDrawUBO(draw_data);
@@ -49,6 +50,7 @@ void MeshRenderSystem::onEntityIDPass(entt::registry& registry, const RenderCont
 void MeshRenderSystem::onOutlinePass(entt::registry& registry, const RenderContext& ctx) {
   if (!ctx.selected_entity || !ctx.selected_entity.hasComponent<MeshComponent>()) return;
   auto mesh = ctx.assets.getAsset<Mesh>(ctx.selected_entity.getComponent<MeshComponent>().mesh_handle);
+  if (!mesh) return;
   auto transform = ctx.selected_entity.getComponent<TransformComponent>().getTransform();
   Renderer::PerDrawUBO draw_data{.model = transform};
   ctx.renderer.uploadPerDrawUBO(draw_data);

@@ -1,6 +1,13 @@
 #pragma once
 
 #include <entt.hpp>
+#include <functional>
+#include <optional>
+#include <tuple>
+#include <variant>
+
+template <typename... Ts>
+using OneOf = std::optional<std::variant<std::reference_wrapper<Ts>...>>;
 
 class Entity {
  public:
@@ -20,6 +27,22 @@ class Entity {
   template <typename T>
   T* tryGetComponent() const {
     return m_registry->try_get<T>(m_handle);
+  }
+
+  template <typename... Ts>
+    requires(sizeof...(Ts) != 1 || !entt::is_tuple_v<std::tuple_element_t<0, std::tuple<Ts...>>>)
+  OneOf<Ts...> tryGetOneOf() const {
+    OneOf<Ts...> result;
+    ((!result && m_registry->try_get<Ts>(m_handle) ? (result = std::ref(*m_registry->try_get<Ts>(m_handle)), true)
+                                                   : false) ||
+     ...);
+    return result;
+  }
+
+  template <typename T>
+    requires entt::is_tuple<T>::value
+  auto tryGetOneOf() const {
+    return [this]<typename... Ts>(std::tuple<Ts...>*) { return tryGetOneOf<Ts...>(); }((T*)nullptr);
   }
 
   template <typename T>

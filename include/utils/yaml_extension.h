@@ -61,8 +61,6 @@ struct convert<glm::mat<C, R, T, Q>> {
     return true;
   }
 };
-
-// Generic Emitter << overload for ALL glm::mat types
 template <int C, int R, typename T, glm::qualifier Q>
 Emitter& operator<<(Emitter& out, const glm::mat<C, R, T, Q>& m) {
   out << Flow << BeginSeq;

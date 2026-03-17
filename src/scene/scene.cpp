@@ -72,6 +72,10 @@ Entity Scene::getEntityFromHandle(entt::entity handle) const {
   return Entity(handle, const_cast<entt::registry*>(&m_registry));
 }
 
+void Scene::onUpdate(float dt) {
+  for (auto& system : m_logic_systems) system->onUpdate(*this, dt);
+}
+
 void Scene::onRender(Entity selected_entity, const EditorCamera& camera, const glm::vec2& viewport_size) {
   Renderer::SceneData scene_data{.viewport_size = viewport_size,
                                  .cam_pos = camera.getPosition(),

@@ -5,8 +5,9 @@
 #include "renderer/primitives/line.h"
 #include "renderer/primitives/point.h"
 #include "scene/component_defaults.h"
+#include "scene/components/curve.h"
 
-struct LineComponent : ComponentDefaults {
+struct LineComponent : ComponentDefaults, ICurve {
   static constexpr std::string_view name = "Line";
   glm::vec3 p0 = {0.0f, 0.0f, 0.0f}, p1 = {0.0f, 0.0f, 0.0f};
   glm::vec3 color = {1.0f, 1.0f, 1.0f};
@@ -44,4 +45,7 @@ struct LineComponent : ComponentDefaults {
     ImGui::ColorEdit3("Color", glm::value_ptr(c.color));
     ImGui::DragFloat("Thickness", &c.thickness);
   }
+
+  glm::vec3 evaluate(float t) const override { return glm::mix(p0, p1, t); }
+  float length() const override { return glm::distance(p0, p1); }
 };

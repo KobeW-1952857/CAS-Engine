@@ -11,7 +11,7 @@ void main() {
   if (dist > 1.0) discard;
 
   vec3 normal = normalize(vec3(v_uv, sqrt(1.0 - dist)));
-  vec3 light = normalize(vec3(1, 2, 1));
+  vec3 light = normalize(u_light_pos);
   float diffuse = max(dot(normal, light), 0.0) * 0.7 + 0.3;
   out_color = vec4(u_color * diffuse, 1.0);
 }

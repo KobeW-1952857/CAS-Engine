@@ -46,4 +46,23 @@ struct BezierComponent : ComponentDefaults {
     }
     ImGui::ColorEdit3("Color", glm::value_ptr(c.color));
   }
+
+  glm::vec3 evaluate(float t) const {
+    float u = 1.0f - t;
+    return u * u * u * control_points[0] + 3.0f * u * u * t * control_points[1] + 3.0f * u * t * t * control_points[2] +
+           t * t * t * control_points[3];
+  }
+  float length() const {
+    // Approximate length by sampling points along the curve
+    const int samples = 10;
+    float length = 0.0f;
+    glm::vec3 prev_point = control_points[0];
+    for (int i = 1; i <= samples; ++i) {
+      float t = static_cast<float>(i) / samples;
+      glm::vec3 point = evaluate(t);
+      length += glm::distance(prev_point, point);
+      prev_point = point;
+    }
+    return length;
+  }
 };

@@ -23,7 +23,14 @@ concept Component =
     };
 
 using AllComponentTypes = std::tuple<IDComponent, TagComponent, TransformComponent, MeshComponent, MaterialComponent,
-                                     LineComponent, BezierComponent>;
+                                     LineComponent, BezierComponent, LineFollowerComponent>;
+
+template <typename T>
+concept CurveConcept = requires(const T& a, float t) {
+  { a.evaluate(t) } -> std::same_as<glm::vec3>;
+  { a.length() } -> std::same_as<float>;
+};
+using AllCurveTypes = std::tuple<LineComponent, BezierComponent>;
 
 namespace detail {
 template <typename T>
@@ -55,12 +62,9 @@ void forEachComponentType(F&& f) {
   std::apply([&](auto... dummy) { (f.template operator()<decltype(dummy)>(), ...); }, AllComponentTypes{});
 }
 
-static_assert(detail::validateComponent<IDComponent>());
-static_assert(detail::validateComponent<TagComponent>());
-static_assert(detail::validateComponent<TransformComponent>());
-static_assert(detail::validateComponent<MeshComponent>());
-static_assert(detail::validateComponent<MaterialComponent>());
-static_assert(detail::validateComponent<LineComponent>());
+static_assert([]<typename... Ts>(std::type_identity<std::tuple<Ts...>>) {
+  return (detail::validateComponent<Ts>() && ...);
+}(std::type_identity<AllComponentTypes>{}));
 
 static_assert(detail::AllSatisfyComponent<AllComponentTypes>::value,
               "All types in AllComponentTypes must satisfy the Component concept");

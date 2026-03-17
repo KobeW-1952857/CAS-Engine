@@ -1,4 +1,19 @@
 Entities:
+  - ID: 11125029229296200114
+    TagComponent:
+      Tag: Follower
+    TransformComponent:
+      Translation: [0.7285596, 0.22132671, -4.849209]
+      Rotation: [0, 0, 0]
+      Scale: [0.1, 0.1, 0.1]
+    MeshComponent:
+      MeshHandle: 2
+    MaterialComponent:
+      MaterialHandle: 6
+    line_entity: 13479735072471730284
+    speed: 1
+    t: 0.2605387
+    loop: true
   - ID: 13479735072471730284
     TagComponent:
       Tag: Bezier
@@ -6,10 +21,10 @@ Entities:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    p0: [0, 0, 0]
-    p1: [1, 0, 0]
-    p2: [1, 1, 0]
-    p3: [0, 1, 0]
+    p0: [0, 0, -3]
+    p1: [1, 0, -10]
+    p2: [2, 1, 4]
+    p3: [0, 4, 2]
     color: [1, 1, 0]
   - {ID: 10004101596907624391, TagComponent: {Tag: Entity 1}, TransformComponent: {Translation: [0, 7, 0], Rotation: [0, 0, 0], Scale: [1, 1, 1]}, MeshComponent: {MeshHandle: 2}, MaterialComponent: {MaterialHandle: 6}}
   - {ID: 13760195744637166698, TagComponent: {Tag: Entity 2}, TransformComponent: {Translation: [0, 0, -9], Rotation: [0, 0, 0], Scale: [1, 1, 1]}, MeshComponent: {MeshHandle: 1}, MaterialComponent: {MaterialHandle: 6}}

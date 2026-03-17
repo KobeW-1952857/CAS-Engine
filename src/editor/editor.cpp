@@ -9,7 +9,6 @@
 #include <variant>
 
 #include "core/asset_manager.h"
-#include "core/asset_traits.h"
 #include "core/project.h"
 #include "renderer/framebuffer.h"
 #include "renderer/renderer.h"
@@ -18,6 +17,7 @@
 #include "renderer/systems/mesh_renderer_system.h"
 #include "scene/entity.h"
 #include "scene/scene.h"
+#include "scene/systems/line_follower_system.h"
 #include "utils/utils.h"
 
 Editor::Editor() : m_viewport_size(1280, 720), m_asset_browser_panel(m_context), m_properties_panel(m_context) {
@@ -43,6 +43,8 @@ void Editor::openScene(UUID handle) {
   scene->registerRenderSystem(std::make_unique<MeshRenderSystem>());
   scene->registerRenderSystem(std::make_unique<LineRendererSystem>(m_context.filesystem));
   scene->registerRenderSystem(std::make_unique<BezierRendererSystem>(m_context.filesystem));
+
+  scene->registerLogicSystem(std::make_unique<LineFollowerSystem>());
 }
 
 void Editor::init() {
@@ -107,6 +109,7 @@ void Editor::init() {
 void Editor::setContext(const std::shared_ptr<Scene>& scene) {
   m_active_scene = scene;
   m_scene_hierarchy_panel.setContext(scene);
+  m_context.active_scene = scene.get();
 }
 
 void Editor::onUpdate(float dt) {
@@ -114,6 +117,7 @@ void Editor::onUpdate(float dt) {
     bool allow_keyboard = ImGui::GetIO().WantCaptureKeyboard;
     m_editor_camera.onUpdate(dt, allow_keyboard);
   }
+  if (m_active_scene) m_active_scene->onUpdate(dt);
 
   m_framebuffer->resize(static_cast<uint32_t>(m_viewport_size.x), static_cast<uint32_t>(m_viewport_size.y));
 
