@@ -65,7 +65,8 @@ class Scene : public Asset {
   }
 
   void onUpdate(float dt);
-  void onRender(Entity selected_entity, const EditorCamera& camera, const glm::vec2& viewport_size);
+  void onRender(Entity selected_entity, const EditorCamera& camera, const glm::vec2& viewport_size,
+                std::function<void()> overlay_pass = {});
   void onImGuiRender();
 
  private:

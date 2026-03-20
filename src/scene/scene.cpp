@@ -76,7 +76,8 @@ void Scene::onUpdate(float dt) {
   for (auto& system : m_logic_systems) system->onUpdate(*this, dt);
 }
 
-void Scene::onRender(Entity selected_entity, const EditorCamera& camera, const glm::vec2& viewport_size) {
+void Scene::onRender(Entity selected_entity, const EditorCamera& camera, const glm::vec2& viewport_size,
+                     std::function<void()> overlay_pass) {
   Renderer::SceneData scene_data{.viewport_size = viewport_size,
                                  .cam_pos = camera.getPosition(),
                                  .view_proj = camera.getViewProjectionMatrix(),
@@ -89,6 +90,8 @@ void Scene::onRender(Entity selected_entity, const EditorCamera& camera, const g
   m_renderer->beginColorPass();
   for (auto& system : m_render_systems) system->onColorPass(m_registry, ctx);
   checkOpenGLError("Scene::onRender color pass");
+
+  if (overlay_pass) overlay_pass();
 
   for (auto& system : m_render_systems) system->onOutlinePass(m_registry, ctx);
   checkOpenGLError("Scene::onRender outline pass");

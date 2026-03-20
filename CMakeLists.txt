@@ -22,6 +22,7 @@ add_executable(CASEngine
     src/core/uuid.cpp
     src/editor/editor.cpp
     src/editor/editor_camera.cpp
+    src/editor/grid_overlay.cpp
     src/editor/panels/asset_browser.cpp
     src/editor/panels/console.cpp
     src/editor/panels/properties.cpp

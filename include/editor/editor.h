@@ -4,6 +4,7 @@
 
 #include "core/app_context.h"
 #include "editor/editor_camera.h"
+#include "editor/grid_overlay.h"
 #include "editor/panels/asset_browser.h"
 #include "editor/panels/console.h"
 #include "editor/panels/properties.h"
@@ -25,6 +26,7 @@ class Editor {
  private:
   void drawDockspace();
   void drawViewport();
+  void drawAxisGizmo();
   void drawDebugPanel();
   void init();
   void handleShortcuts();
@@ -43,6 +45,8 @@ class Editor {
   AssetBrowser m_asset_browser_panel;
   ConsolePanel m_console_panel;
   PropertiesPanel m_properties_panel;
+
+  std::optional<GridOverlay> m_grid_overlay;
 
   std::shared_ptr<Framebuffer> m_framebuffer;
 

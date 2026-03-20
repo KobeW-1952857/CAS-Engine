@@ -104,6 +104,8 @@ void Editor::init() {
         break;
     }
   });
+
+  m_grid_overlay.emplace(m_context.filesystem);
 }
 
 void Editor::setContext(const std::shared_ptr<Scene>& scene) {
@@ -128,7 +130,17 @@ void Editor::onUpdate(float dt) {
   if (m_active_scene) {
     Entity selected =
         std::holds_alternative<Entity>(m_selection_context) ? std::get<Entity>(m_selection_context) : Entity();
-    m_active_scene->onRender(selected, m_editor_camera, m_viewport_size);
+    m_active_scene->onRender(selected, m_editor_camera, m_viewport_size, [this] {
+      if (!m_grid_overlay || !m_grid_overlay->enabled) return;
+      GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_NONE};
+      glDrawBuffers(2, buffers);
+
+      if (m_grid_overlay) m_grid_overlay->render();
+
+      // Restore so the framebuffer is in a clean state after unbind.
+      GLenum restore[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+      glDrawBuffers(2, restore);
+    });
   }
 
   m_framebuffer->unbind();
@@ -185,6 +197,15 @@ void Editor::drawDockspace() {
 void Editor::drawViewport() {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
   ImGui::Begin("Viewport");
+
+  // Overlay toggles
+  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 0));
+  if (m_grid_overlay) {
+    bool show = m_grid_overlay->enabled;
+    if (ImGui::Checkbox("Grid", &show)) m_grid_overlay->enabled = show;
+  }
+  ImGui::PopStyleVar();
+
   m_viewport_focused = ImGui::IsWindowFocused();
   m_viewport_hovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
 
@@ -197,6 +218,7 @@ void Editor::drawViewport() {
   uint32_t texture_id = m_framebuffer->getColorAttachmentRendererID();
   // NOLINTNEXTLINE
   ImGui::Image(reinterpret_cast<void*>(texture_id), viewport_panel_size, ImVec2(0, 1), ImVec2(1, 0));
+  drawAxisGizmo();
 
   if (ImGui::IsMouseClicked(0) && m_viewport_hovered) {
     ImVec2 mouse_pos = ImGui::GetMousePos();
@@ -222,6 +244,48 @@ void Editor::drawViewport() {
 
   ImGui::End();
   ImGui::PopStyleVar();
+}
+
+void Editor::drawAxisGizmo() {
+  // if (!m_axis_gizmo_enabled) return;
+
+  // Position the gizmo in the bottom-left of the viewport panel.
+  ImVec2 panel_max = ImGui::GetItemRectMax();
+  constexpr float kSize = 50.0f;
+  constexpr float kOffset = 16.0f;
+  ImVec2 origin = {panel_max.x - kOffset - kSize, panel_max.y - ImGui::GetItemRectSize().y + kOffset + kSize};
+
+  // Rotation-only view — strip translation from the camera view matrix.
+  glm::mat4 rot_view = glm::mat4(glm::mat3(m_editor_camera.getViewMatrix()));
+  glm::mat4 proj = glm::ortho(-1.5f, 1.5f, -1.5f, 1.5f, -10.f, 10.f);
+  glm::mat4 vp = proj * rot_view;
+
+  // Project a direction vector into the gizmo's 2D panel space.
+  auto project = [&](glm::vec3 dir) -> ImVec2 {
+    glm::vec4 clip = vp * glm::vec4(dir, 0.0f);
+    // Y is flipped: +Y in GL clip space == up, but ImGui Y grows downward.
+    return {origin.x + clip.x * kSize, origin.y - clip.y * kSize};
+  };
+
+  ImDrawList* dl = ImGui::GetWindowDrawList();
+  constexpr float kThickness = 2.0f;
+
+  struct {
+    glm::vec3 dir;
+    ImU32 color;
+    const char* label;
+  } axes[] = {
+      {{1, 0, 0}, IM_COL32(210, 60, 60, 255), "X"},
+      {{0, 1, 0}, IM_COL32(60, 210, 60, 255), "Y"},
+      {{0, 0, 1}, IM_COL32(60, 60, 210, 255), "Z"},
+  };
+
+  for (auto& [dir, color, label] : axes) {
+    ImVec2 tip = project(dir);
+    dl->AddLine(origin, tip, color, kThickness);
+    dl->AddCircleFilled(tip, 4.0f, color);
+    dl->AddText({tip.x + 5.0f, tip.y - 7.0f}, color, label);
+  }
 }
 
 void Editor::handleShortcuts() {
