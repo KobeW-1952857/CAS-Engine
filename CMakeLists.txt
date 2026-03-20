@@ -15,6 +15,12 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(yaml-cpp)
 
+
+set(APP_ICON "${CMAKE_CURRENT_SOURCE_DIR}/CASEngine.icon")
+set_source_files_properties(${APP_ICON} PROPERTIES
+    MACOSX_PACKAGE_LOCATION "Resources"
+)
+
 add_executable(CASEngine
     src/core/asset_manager.cpp
     src/core/input.cpp
@@ -44,6 +50,8 @@ add_executable(CASEngine
     src/utils/utils.cpp
 
     src/main.cpp
+
+    ${APP_ICON}
 )
 
 set_target_properties(CASEngine PROPERTIES

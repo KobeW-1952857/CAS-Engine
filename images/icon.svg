@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" width="220" height="220">
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0d0f14"/>
+      <stop offset="100%" style="stop-color:#12161e"/>
+    </linearGradient>
+
+    <!-- Orange glow for mark -->
+    <radialGradient id="glowOrange" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#ff8c00;stop-opacity:0.35"/>
+      <stop offset="100%" style="stop-color:#ff8c00;stop-opacity:0"/>
+    </radialGradient>
+
+    <!-- Accent gradient on lines -->
+    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff7a00"/>
+      <stop offset="100%" style="stop-color:#ffb830"/>
+    </linearGradient>
+
+    <!-- Text gradient -->
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff"/>
+      <stop offset="100%" style="stop-color:#c0c8d8"/>
+    </linearGradient>
+
+    <!-- Clip for icon area -->
+    <clipPath id="iconClip">
+      <rect x="0" y="0" width="220" height="220"/>
+    </clipPath>
+
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="softGlow" x="-80%" y="-80%" width="260%" height="260%">
+      <feGaussianBlur stdDeviation="12" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- ============ ICON MARK (left side) ============ -->
+  <!-- Glow halo behind icon -->
+  <!-- <ellipse cx="110" cy="110" rx="70" ry="70" fill="url(#glowOrange)" opacity="0.7"/> -->
+
+  <!-- Isometric cube wireframe, centered at (110, 110) -->
+  <!-- Cube: top face, front-left face, front-right face -->
+  <!-- Top face vertices (isometric projection): -->
+  <!--   Top:    (110, 52)    -->
+  <!--   Left:   (62, 79)     -->
+  <!--   Bottom: (110, 106)   -->
+  <!--   Right:  (158, 79)    -->
+  <!-- Front-left face: Left(62,79), BottomLeft(62,137), Bottom(110,164), Bottom-right(110,106) -->
+  <!-- Front-right face: Right(158,79), BottomRight(158,137), Bottom(110,164), BottomLeft(110,106)  -->
+
+  <!-- Top face -->
+  <polygon points="110,50 160,78 110,106 60,78" fill="none" stroke="url(#lineGrad)" stroke-width="1.5" opacity="0.9"/>
+
+  <!-- Front-left face -->
+  <polygon points="60,78 60,138 110,166 110,106" fill="none" stroke="url(#lineGrad)" stroke-width="1.5" opacity="0.9"/>
+
+  <!-- Front-right face -->
+  <polygon points="160,78 160,138 110,166 110,106" fill="none" stroke="url(#lineGrad)" stroke-width="1.5" opacity="0.9"/>
+
+  <!-- Inner diagonal lines suggesting wireframe depth -->
+  <line x1="110" y1="50" x2="110" y2="106" stroke="url(#lineGrad)" stroke-width="0.8" opacity="0.4"/>
+  <line x1="60" y1="78" x2="160" y2="78" stroke="url(#lineGrad)" stroke-width="0.8" opacity="0.4"/>
+
+  <!-- Bezier curve arc drawn through the cube — the "CAS" in CAS Engine -->
+  <!-- A decorative Bezier curve suggesting simulation/animation paths -->
+  <path d="M 68 148 C 75 90, 145 90, 152 148"
+        fill="none"
+        stroke="url(#lineGrad)"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        filter="url(#glow)"
+        opacity="0.85"/>
+
+  <!-- Control point dots for Bezier -->
+  <circle cx="68" cy="148" r="3" fill="#ffb830" filter="url(#glow)"/>
+  <circle cx="152" cy="148" r="3" fill="#ffb830" filter="url(#glow)"/>
+  <!-- Faint control handles -->
+  <line x1="68" y1="148" x2="75" y2="90" stroke="#ff8c00" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+  <line x1="152" y1="148" x2="145" y2="90" stroke="#ff8c00" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.45"/>
+  <circle cx="75" cy="90" r="2" fill="none" stroke="#ff8c00" stroke-width="1" opacity="0.55"/>
+  <circle cx="145" cy="90" r="2" fill="none" stroke="#ff8c00" stroke-width="1" opacity="0.55"/>
+
+  <!-- Glowing corner accents on cube vertices -->
+  <circle cx="110" cy="50" r="2.5" fill="#ffb830"/>
+  <circle cx="60" cy="78" r="2.5" fill="#ff7a00"/>
+  <circle cx="160" cy="78" r="2.5" fill="#ff7a00"/>
+  <circle cx="110" cy="106" r="2" fill="#ff7a00" opacity="0.7"/>
+  <circle cx="60" cy="138" r="2" fill="#ff7a00" opacity="0.6"/>
+  <circle cx="160" cy="138" r="2" fill="#ff7a00" opacity="0.6"/>
+  <circle cx="110" cy="166" r="2.5" fill="#ffb830"/>
+</svg>

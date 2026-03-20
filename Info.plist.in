@@ -5,13 +5,16 @@
     <key>CFBundleExecutable</key>
     <string>${MACOSX_BUNDLE_EXECUTABLE_NAME}</string>
     <key>CFBundleIdentifier</key>
-    <string>com.yourname.CASEngine</string>
+    <string>be.wernerkobe.CASEngine</string>
     <key>CFBundleName</key>
     <string>${MACOSX_BUNDLE_BUNDLE_NAME}</string>
+    <key>CFBundleIconName</key>
+    <string>CASEngine</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>NSHighResolutionCapable</key>
     <true/>
+
 
     <key>NSDesktopFolderUsageDescription</key>
     <string>CASEngine needs access to open and save your project files.</string>
