@@ -1,16 +1,16 @@
 Entities:
-  - ID: 10875240921958495891
+  - ID: 13479735072471730284
     TagComponent:
-      Tag: Line
+      Tag: Bezier
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    p0: [0, 0, 0]
-    p1: [0, 0, 20]
-    color: [1, 0, 0]
-    thickness: 1
-  - {ID: 13760195744637166698, TagComponent: {Tag: Entity 2}, TransformComponent: {Translation: [0, 0, -9], Rotation: [0, 0, 0], Scale: [1, 1, 1]}, MeshComponent: {MeshHandle: 1}, MaterialComponent: {MaterialHandle: 6}}
-  - {ID: 10004101596907624391, TagComponent: {Tag: Entity 1}, TransformComponent: {Translation: [0, 7, 0], Rotation: [0, 0, 0], Scale: [1, 1, 1]}, MeshComponent: {MeshHandle: 2}, MaterialComponent: {MaterialHandle: 6}}
-  - {ID: 13479735072471730284, TagComponent: {Tag: Bezier}, TransformComponent: {Translation: [0, 0, 0], Rotation: [0, 0, 0], Scale: [1, 1, 1]}, p0: [0, 0, -3], p1: [6, 0, -4], p2: [2, 1, 4], p3: [0, 4, 2], color: [1, 1, 0]}
-  - {ID: 11125029229296200114, TagComponent: {Tag: Follower}, TransformComponent: {Translation: [2.7198663, 1.174917, 0.5751124], Rotation: [0, 0, 0], Scale: [0.1, 0.1, 0.1]}, MeshComponent: {MeshHandle: 2}, MaterialComponent: {MaterialHandle: 6}, line_entity: 13479735072471730284, speed: 1, loop: true}
+    p0: [0, 0, -3]
+    p1: [6, 0, -4]
+    p2: [2, 1, 4]
+    p3: [0, 4, 2]
+    color: [1, 1, 0]
+  - {ID: 11125029229296200114, TagComponent: {Tag: Follower}, ChildrenComponent: {Children: [3280944735664253195, 1851722492125955939]}, TransformComponent: {Translation: [3.0158384, 0.29188532, -2.0029724], Rotation: [0, 0, 0], Scale: [0.1, 0.1, 0.1]}, line_entity: 13479735072471730284, speed: 0.6, loop: true}
+  - {ID: 3280944735664253195, TagComponent: {Tag: Head}, ParentComponent: {ParentID: 11125029229296200114}, TransformComponent: {Translation: [0, 0, 0], Rotation: [0, 0, 0], Scale: [1, 1, 1]}, MeshComponent: {MeshHandle: 2}, MaterialComponent: {MaterialHandle: 6}}
+  - {ID: 1851722492125955939, TagComponent: {Tag: Body}, ParentComponent: {ParentID: 11125029229296200114}, TransformComponent: {Translation: [0, -2, 0], Rotation: [0, 0, 0], Scale: [0.3, 1, 0.3]}, MeshComponent: {MeshHandle: 1}, MaterialComponent: {MaterialHandle: 6}}

@@ -12,6 +12,7 @@
 
 #include "core/app_context.h"
 #include "scene/component_defaults.h"
+#include "scene/components/parent_component.h"
 #include "scene/entity.h"
 #include "utils/yaml_extension.h"
 
@@ -27,6 +28,17 @@ struct TransformComponent : ComponentDefaults {
   glm::mat4 getTransform() const {
     return glm::translate(glm::mat4(1.0f), translation) * glm::toMat4(glm::quat(rotation)) *
            glm::scale(glm::mat4(1.0f), scale);
+  }
+
+  glm::mat4 getWorldTransform(const Scene& scene, Entity entity) const {
+    glm::mat4 local = entity.getComponent<TransformComponent>().getTransform();
+    if (!entity.hasComponent<ParentComponent>()) return local;
+
+    UUID parent_id = entity.getComponent<ParentComponent>().parent_id;
+    Entity parent = scene.getEntity(parent_id);
+    if (!parent) return local;
+
+    return getWorldTransform(scene, parent) * local;
   }
 
   static void serialize(YAML::Emitter& out, const TransformComponent& c) {

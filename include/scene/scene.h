@@ -64,6 +64,9 @@ class Scene : public Asset {
         ...);
   }
 
+  void setParent(Entity child, Entity parent);
+  void unParent(Entity child);
+
   void onUpdate(float dt);
   void onRender(Entity selected_entity, const EditorCamera& camera, const glm::vec2& viewport_size,
                 std::function<void()> overlay_pass = {});

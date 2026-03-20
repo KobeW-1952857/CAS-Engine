@@ -22,8 +22,9 @@ concept Component =
       { T::drawUI(mut, ctx) } -> std::same_as<void>;
     };
 
-using AllComponentTypes = std::tuple<IDComponent, TagComponent, TransformComponent, MeshComponent, MaterialComponent,
-                                     LineComponent, BezierComponent, LineFollowerComponent>;
+using AllComponentTypes =
+    std::tuple<IDComponent, TagComponent, ParentComponent, ChildrenComponent, TransformComponent, MeshComponent,
+               MaterialComponent, LineComponent, BezierComponent, LineFollowerComponent>;
 
 template <typename T>
 concept CurveConcept = requires(const T& a, float t) {

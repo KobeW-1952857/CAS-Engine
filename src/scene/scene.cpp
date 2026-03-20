@@ -72,6 +72,38 @@ Entity Scene::getEntityFromHandle(entt::entity handle) const {
   return Entity(handle, const_cast<entt::registry*>(&m_registry));
 }
 
+void Scene::setParent(Entity child, Entity parent) {
+  if (!child || !parent) return;
+
+  unParent(child);
+
+  UUID child_id = child.getComponent<IDComponent>().ID;
+  UUID parent_id = parent.getComponent<IDComponent>().ID;
+
+  child.addComponent<ParentComponent>().parent_id = parent_id;
+
+  if (!parent.hasComponent<ChildrenComponent>()) parent.addComponent<ChildrenComponent>();
+  parent.getComponent<ChildrenComponent>().children.push_back(child_id);
+
+  modified = true;
+}
+
+void Scene::unParent(Entity child) {
+  if (!child.hasComponent<ParentComponent>()) return;
+
+  UUID parent_id = child.getComponent<ParentComponent>().parent_id;
+  UUID child_id = child.getComponent<IDComponent>().ID;
+
+  Entity parent = getEntity(parent_id);
+  if (parent && parent.hasComponent<ChildrenComponent>()) {
+    auto& children = parent.getComponent<ChildrenComponent>().children;
+    std::erase(children, child_id);
+  }
+
+  child.removeComponent<ParentComponent>();
+  modified = true;
+}
+
 void Scene::onUpdate(float dt) {
   for (auto& system : m_logic_systems) system->onUpdate(*this, dt);
 }

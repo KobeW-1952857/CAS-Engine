@@ -23,5 +23,8 @@ class SceneHierarchy {
   void displayAddComponent();
 
  private:
+  bool isDescendantOf(Entity potential_ancestor, Entity entity) const;
+
+ private:
   std::shared_ptr<Scene> m_context;
 };

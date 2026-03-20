@@ -16,8 +16,9 @@ void MeshRenderSystem::onColorPass(entt::registry& registry, const RenderContext
 
     auto mesh = ctx.assets.getAsset<Mesh>(view.get<MeshComponent>(entity).mesh_handle);
     auto material = ctx.assets.getAsset<Material>(view.get<MaterialComponent>(entity).material_handle);
-    auto transform = view.get<TransformComponent>(entity).getTransform();
     if (!mesh || !material) continue;
+
+    auto transform = view.get<TransformComponent>(entity).getWorldTransform(ctx.scene, e);
 
     bool selected = e == ctx.selected_entity;
     if (selected)
@@ -37,7 +38,7 @@ void MeshRenderSystem::onEntityIDPass(entt::registry& registry, const RenderCont
   auto view = registry.view<TransformComponent, MeshComponent>();
   for (auto entity : view) {
     auto mesh = ctx.assets.getAsset<Mesh>(view.get<MeshComponent>(entity).mesh_handle);
-    auto transform = view.get<TransformComponent>(entity).getTransform();
+    auto transform = view.get<TransformComponent>(entity).getWorldTransform(ctx.scene, Entity(entity, &registry));
     if (!mesh) continue;
 
     Renderer::PerDrawUBO draw_data{.model = transform};
@@ -51,7 +52,8 @@ void MeshRenderSystem::onOutlinePass(entt::registry& registry, const RenderConte
   if (!ctx.selected_entity || !ctx.selected_entity.hasComponent<MeshComponent>()) return;
   auto mesh = ctx.assets.getAsset<Mesh>(ctx.selected_entity.getComponent<MeshComponent>().mesh_handle);
   if (!mesh) return;
-  auto transform = ctx.selected_entity.getComponent<TransformComponent>().getTransform();
+  auto transform =
+      ctx.selected_entity.getComponent<TransformComponent>().getWorldTransform(ctx.scene, ctx.selected_entity);
   Renderer::PerDrawUBO draw_data{.model = transform};
   ctx.renderer.uploadPerDrawUBO(draw_data);
   ctx.renderer.submitOutline(*mesh);
