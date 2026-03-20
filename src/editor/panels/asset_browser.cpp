@@ -32,6 +32,7 @@ void AssetBrowser::drawDirectoryNode(const std::filesystem::path& path, Selectio
 }
 
 void AssetBrowser::drawFileNode(const std::filesystem::path& path, SelectionContext& selection_context) {
+  if (path.extension() == ".casreg" || path.extension() == ".cproj") return;
   ImGui::PushID(path.c_str());
 
   auto selected_path = m_context.filesystem.getProjectPath(path);

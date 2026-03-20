@@ -8,7 +8,6 @@
 #include "Nexus/Window/GLFWWindow.h"
 #include "editor/editor.h"
 #include "renderer/camera.h"
-#include "utils/utils.h"
 
 int main(int argc, char** argv) {
   Nexus::Logger::setLevel(Nexus::LogLevel::Trace);
@@ -43,7 +42,6 @@ int main(int argc, char** argv) {
   int framecount = 0;
 
   window->whileOpen([&]() {
-    checkOpenGLError(std::format("Start render frame {}", framecount++));
     float currentFrame = glfwGetTime();
     dt = currentFrame - lastFrame;
     lastFrame = currentFrame;
@@ -52,9 +50,7 @@ int main(int argc, char** argv) {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     editor.onUpdate(dt);
-    checkOpenGLError(std::format("Start editor update frame {}", framecount));
 
     editor.onImGuiRender();
-    checkOpenGLError(std::format("Start editor imgui frame {}", framecount));
   });
 }
