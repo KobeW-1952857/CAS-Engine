@@ -1,5 +1,6 @@
 #include "editor/editor.h"
 
+#include <IconsFontAwesome7.h>
 #include <Nexus/Log.h>
 #include <imgui.h>
 
@@ -53,6 +54,20 @@ void Editor::init() {
   setTheme();
   ImGui::GetStyle().WindowRounding = 12.0f;
   ImGui::GetStyle().FrameRounding = 12.0f;
+  ImGui::GetStyle().GrabRounding = 8.0f;
+  ImGuiIO& io = ImGui::GetIO();
+  io.Fonts->AddFontFromFileTTF(
+      m_context.filesystem.resolvePath("engine://fonts/Comfortaa-VariableFont_wght.ttf").c_str(), 16.0f);
+  ImFontConfig config;
+  config.MergeMode = true;
+  config.GlyphMinAdvanceX = 13.0f;
+  config.GlyphOffset.y = 1.5f;
+  config.GlyphOffset.x = 1.0f;
+  config.PixelSnapH = true;
+  static const ImWchar icon_ranges[] = {0xf000, 0xf8ff, 0};
+  io.Fonts->AddFontFromFileTTF(m_context.filesystem.resolvePath("engine://fonts/fa-solid-900.otf").c_str(), 13.0f,
+                               &config, icon_ranges);
+  io.Fonts->Build();
 
   m_context.renderer.init(m_context.filesystem);
   m_context.assets.setRenderer(&m_context.renderer);
@@ -121,11 +136,13 @@ void Editor::setContext(const std::shared_ptr<Scene>& scene) {
 }
 
 void Editor::onUpdate(float dt) {
-  if (m_viewport_focused || m_viewport_hovered) {
-    bool allow_keyboard = ImGui::GetIO().WantCaptureKeyboard;
-    m_editor_camera.onUpdate(dt, allow_keyboard);
+  m_context.clock.advanceFrame(dt);
+
+  if (m_viewport_focused || m_viewport_hovered) m_editor_camera.onUpdate(dt, !ImGui::GetIO().WantCaptureKeyboard);
+
+  if (m_active_scene) {
+    for (uint64_t i = 0; i < m_context.clock.pendingTicks(); ++i) m_active_scene->onUpdate(m_context.clock.tickDt());
   }
-  if (m_active_scene) m_active_scene->onUpdate(dt);
 
   m_framebuffer->resize(static_cast<uint32_t>(m_viewport_size.x), static_cast<uint32_t>(m_viewport_size.y));
 
@@ -180,6 +197,51 @@ void Editor::onImGuiRender() {
   }
 }
 
+void DrawMainStatusBar() {
+  // 1. Get the Main Viewport (the whole GLFW window)
+  ImGuiViewport* viewport = ImGui::GetMainViewport();
+
+  // 2. Define the height of your bar
+  float footerHeight = ImGui::GetFrameHeight() + 4.0f;
+
+  // 3. Position it at the very bottom
+  // Pos.y + Size.y gives us the bottom edge
+  ImGui::SetNextWindowPos(ImVec2(viewport->WorkPos.x, viewport->WorkPos.y + viewport->WorkSize.y - footerHeight));
+
+  // 4. Stretch it to the full width
+  ImGui::SetNextWindowSize(ImVec2(viewport->WorkSize.x, footerHeight));
+
+  // 5. Use Viewport ID to ensure it handles multi-monitor/Retina correctly
+  ImGui::SetNextWindowViewport(viewport->ID);
+
+  // 6. Flags to lock it down (No title, no move, no resize)
+  ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove |
+                                  ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoSavedSettings |
+                                  ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+
+  // Optional: Make it slightly transparent or a specific "Mac" gray
+  ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.12f, 0.12f, 0.12f, 1.00f));
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 3.0f));
+
+  if (ImGui::Begin("##MainStatusBar", nullptr, window_flags)) {
+    ImGui::Text("Project: MySimulation");
+    ImGui::SameLine();
+    ImGui::TextDisabled("|");
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(0.4f, 0.8f, 0.4f, 1.0f), ICON_FA_CIRCLE " Engine Running");
+
+    // Right-aligned section
+    float indicatorWidth = 120.0f;
+    ImGui::SetCursorPosX(ImGui::GetWindowWidth() - indicatorWidth);
+    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+  }
+  ImGui::End();
+
+  ImGui::PopStyleVar(3);
+  ImGui::PopStyleColor();
+}
 void Editor::drawDockspace() {
   ImGui::BeginMainMenuBar();
   if (ImGui::BeginMenu("File")) {
@@ -198,11 +260,39 @@ void Editor::drawDockspace() {
   m_asset_browser_panel.onImGuiRender(m_selection_context);
   m_properties_panel.onImGuiRender(m_selection_context, m_active_scene.get());
   m_console_panel.onImGuiRender();
+  DrawMainStatusBar();
+}
+
+static bool ToggleButton(const char* label, bool toggled, ImVec2 size = ImVec2(0, 0)) {
+  if (toggled) ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_ButtonActive]);
+  bool pressed = ImGui::Button(label, size);
+  if (toggled) ImGui::PopStyleColor();
+
+  return pressed;
 }
 
 void Editor::drawViewport() {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-  ImGui::Begin("Viewport");
+  ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_MenuBar);
+
+  if (ImGui::BeginMenuBar()) {
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 0));
+    ImVec2 size(28, 0);
+    if (ToggleButton(ICON_FA_STOP, m_context.clock.isStopped(), size)) m_context.clock.stop();
+    if (ToggleButton(ICON_FA_PLAY, m_context.clock.isPlaying(), size)) m_context.clock.play();
+    if (ToggleButton(ICON_FA_PAUSE, m_context.clock.isPaused(), size)) m_context.clock.pause();
+    if (ImGui::Button(ICON_FA_FORWARD_FAST, size)) m_context.clock.step();
+    ImGui::PopStyleVar();
+
+    ImGui::TextDisabled("|");
+    ImGui::Text("speed");
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(100.0f);
+    ImGui::SliderFloat("##speed", &m_context.clock.speed, 0.0f, 3.0f, "%.1fx");
+    ImGui::TextDisabled("|");
+    ImGui::Text("t = %.3fs", m_context.clock.simTime());
+    ImGui::EndMenuBar();
+  }
 
   m_viewport_focused = ImGui::IsWindowFocused();
   m_viewport_hovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
@@ -220,14 +310,14 @@ void Editor::drawViewport() {
   drawAxisGizmo();
 
   // Overlay toggles
-  ImVec2 viewport_min = ImGui::GetItemRectMin();
-  ImGui::SetCursorScreenPos(ImVec2(viewport_min.x + 8.0f, viewport_min.y + 8.0f));
-  ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 0));
-  if (m_grid_overlay) {
-    bool show = m_grid_overlay->enabled;
-    if (ImGui::Checkbox("Grid", &show)) m_grid_overlay->enabled = show;
-  }
-  ImGui::PopStyleVar();
+  // ImVec2 viewport_min = ImGui::GetItemRectMin();
+  // ImGui::SetCursorScreenPos(ImVec2(viewport_min.x + 8.0f, viewport_min.y + 8.0f));
+  // ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 0));
+  // if (m_grid_overlay) {
+  //   bool show = m_grid_overlay->enabled;
+  //   if (ImGui::Checkbox("Grid", &show)) m_grid_overlay->enabled = show;
+  // }
+  // ImGui::PopStyleVar();
 
   if (ImGui::IsMouseClicked(0) && m_viewport_hovered) {
     ImVec2 mouse_pos = ImGui::GetMousePos();

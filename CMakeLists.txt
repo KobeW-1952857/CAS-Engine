@@ -26,6 +26,7 @@ add_executable(CASEngine
     src/core/input.cpp
     src/core/project.cpp
     src/core/uuid.cpp
+    src/core/simulation_clock.cpp
     src/editor/editor.cpp
     src/editor/editor_camera.cpp
     src/editor/grid_overlay.cpp
@@ -65,7 +66,7 @@ target_compile_definitions(CASEngine PRIVATE GLM_ENABLE_EXPERIMENTAL)
 target_link_libraries(CASEngine PRIVATE Nexus::Nexus)
 target_link_libraries(CASEngine PRIVATE yaml-cpp::yaml-cpp)
 target_link_libraries(CASEngine PUBLIC "-framework Cocoa" "-framework UniformTypeIdentifiers")
-target_include_directories(CASEngine PUBLIC include vendor/stb/include vendor/tiny_obj/include vendor/EnTT/include)
+target_include_directories(CASEngine PUBLIC include vendor/stb/include vendor/tiny_obj/include vendor/EnTT/include vendor/IconsFontAwesome)
 
 add_custom_target(clean-all
     COMMAND ${CMAKE_COMMAND} -E rm -rf 
