@@ -46,7 +46,7 @@ class Entity {
   }
 
   template <typename T>
-  bool hasComponent() {
+  bool hasComponent() const {
     return m_registry->all_of<T>(m_handle);
   }
 

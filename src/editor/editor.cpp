@@ -136,7 +136,7 @@ void Editor::onUpdate(float dt) {
   if (m_active_scene) {
     Entity selected =
         std::holds_alternative<Entity>(m_selection_context) ? std::get<Entity>(m_selection_context) : Entity();
-    m_active_scene->onRender(selected, m_editor_camera, m_viewport_size, [this] {
+    m_active_scene->onRender(m_editor_camera.toCameraData(), selected, [this] {
       if (!m_grid_overlay || !m_grid_overlay->enabled) return;
       GLenum buffers[] = {GL_COLOR_ATTACHMENT0, GL_NONE};
       glDrawBuffers(2, buffers);

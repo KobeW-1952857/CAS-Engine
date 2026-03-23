@@ -1,6 +1,7 @@
 #pragma once
 
 #include "glm/glm.hpp"
+#include "renderer/camera_data.h"
 
 class EditorCamera {
  public:
@@ -14,6 +15,7 @@ class EditorCamera {
   const glm::mat4& getViewMatrix() const { return m_view; }
   const glm::mat4& getProjectionMatrix() const { return m_projection; }
   glm::mat4 getViewProjectionMatrix() const { return m_projection * m_view; }
+  CameraData toCameraData() const;
 
   glm::vec3 getUpDirection() const;
   glm::vec3 getRightDirection() const;

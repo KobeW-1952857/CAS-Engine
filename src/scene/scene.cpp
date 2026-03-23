@@ -9,7 +9,7 @@
 #include "Nexus/Log.h"
 #include "core/asset_manager.h"
 #include "core/uuid.h"
-#include "editor/editor_camera.h"
+#include "renderer/camera_data.h"
 #include "renderer/material.h"
 #include "renderer/render_context.h"
 #include "renderer/renderer.h"
@@ -108,13 +108,12 @@ void Scene::onUpdate(float dt) {
   for (auto& system : m_logic_systems) system->onUpdate(*this, dt);
 }
 
-void Scene::onRender(Entity selected_entity, const EditorCamera& camera, const glm::vec2& viewport_size,
-                     std::function<void()> overlay_pass) {
-  Renderer::SceneData scene_data{.viewport_size = viewport_size,
-                                 .cam_pos = camera.getPosition(),
-                                 .view_proj = camera.getViewProjectionMatrix(),
-                                 .projection = camera.getProjectionMatrix(),
-                                 .view = camera.getViewMatrix()};
+void Scene::onRender(const CameraData& camera_data, Entity selected_entity, const std::function<void()>& overlay_pass) {
+  Renderer::SceneData scene_data{.viewport_size = camera_data.viewport_size,
+                                 .cam_pos = camera_data.cam_pos,
+                                 .view_proj = camera_data.view_proj,
+                                 .projection = camera_data.projection,
+                                 .view = camera_data.view};
   m_renderer->beginScene(scene_data);
 
   RenderContext ctx{*m_renderer, *m_assets, selected_entity, *this};

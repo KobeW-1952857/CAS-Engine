@@ -10,6 +10,7 @@
 #include "core/asset.h"
 #include "core/asset_traits.h"
 #include "core/uuid.h"
+#include "renderer/camera_data.h"
 #include "renderer/render_system.h"
 #include "scene/entity.h"
 #include "scene/logic_system.h"
@@ -68,8 +69,8 @@ class Scene : public Asset {
   void unParent(Entity child);
 
   void onUpdate(float dt);
-  void onRender(Entity selected_entity, const EditorCamera& camera, const glm::vec2& viewport_size,
-                std::function<void()> overlay_pass = {});
+  void onRender(const CameraData& camera_data, Entity selected_entity = {},
+                const std::function<void()>& overlay_pass = {});
   void onImGuiRender();
 
  private:

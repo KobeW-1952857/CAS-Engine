@@ -35,6 +35,16 @@ void EditorCamera::focusEntity(const glm::vec3& position, const float distance) 
   updateView();
 }
 
+CameraData EditorCamera::toCameraData() const {
+  return {
+      .viewport_size = {m_viewport_width, m_viewport_height},
+      .cam_pos = m_position,
+      .view_proj = getViewProjectionMatrix(),
+      .projection = m_projection,
+      .view = m_view,
+  };
+}
+
 void EditorCamera::updateProjection() {
   m_aspect_ratio = m_viewport_width / m_viewport_height;
   m_projection = glm::perspective(glm::radians(m_fov), m_aspect_ratio, m_near_clip, m_far_clip);
