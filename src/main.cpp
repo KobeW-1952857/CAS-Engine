@@ -24,7 +24,6 @@ int main(int argc, char** argv) {
   glDisable(GL_CULL_FACE);
   glViewport(0, 0, width, height);
 
-  window->setVSync(false);
   window->onResize([&width, &height, &window](int new_width, int new_height) -> bool {
     glfwGetFramebufferSize(static_cast<GLFWwindow*>(window->getNativeWindow()), &width, &height);
 
@@ -34,7 +33,6 @@ int main(int argc, char** argv) {
 
   float dt = 0.0f;
   float lastFrame = 0.0f;
-  float simulation_speed = 1.0f;
   std::vector<std::string> arguments(argv + 1, argv + argc);
 
   Editor editor(arguments);
