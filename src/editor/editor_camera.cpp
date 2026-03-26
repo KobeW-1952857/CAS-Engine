@@ -2,6 +2,7 @@
 
 #include <GLFW/glfw3.h>
 
+#include <cmath>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/quaternion.hpp>
 
@@ -18,21 +19,38 @@ void EditorCamera::onUpdate(float dt, bool allow_keyboard) {
   glm::vec2 delta = (mouse - m_initial_mouse_position) * 0.003f;
   m_initial_mouse_position = mouse;
 
-  if (Input::isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
-    freeFly(delta, dt, allow_keyboard);
-  } else if (Input::isMouseButtonPressed(GLFW_MOUSE_BUTTON_MIDDLE)) {
-    mousePan(delta);
-  } else if (Input::isKeyPressed(GLFW_KEY_LEFT_ALT) && Input::isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
-    mouseRotate(delta);
+  if (m_is_focusing) {
+    // Frame-rate independent exponential smoothing
+    float t = 1.0f - std::exp(-10.0f * dt);
+    m_focal_point = glm::mix(m_focal_point, m_target_focal_point, t);
+    m_distance = glm::mix(m_distance, m_target_distance, t);
+
+    if (glm::distance(m_focal_point, m_target_focal_point) < 0.01f &&
+        std::abs(m_distance - m_target_distance) < 0.01f) {
+      m_focal_point = m_target_focal_point;
+      m_distance = m_target_distance;
+      m_is_focusing = false;
+    }
+  } else {
+    if (Input::isMouseButtonPressed(GLFW_MOUSE_BUTTON_RIGHT)) {
+      freeFly(delta, dt, allow_keyboard);
+      m_is_focusing = false;
+    } else if (Input::isMouseButtonPressed(GLFW_MOUSE_BUTTON_MIDDLE)) {
+      mousePan(delta);
+      m_is_focusing = false;
+    } else if (Input::isKeyPressed(GLFW_KEY_LEFT_ALT) && Input::isMouseButtonPressed(GLFW_MOUSE_BUTTON_LEFT)) {
+      mouseRotate(delta);
+      m_is_focusing = false;
+    }
   }
 
   updateView();
 }
 
 void EditorCamera::focusEntity(const glm::vec3& position, const float distance) {
-  m_focal_point = position;
-  m_distance = distance;
-  updateView();
+  m_target_focal_point = position;
+  m_target_distance = distance;
+  m_is_focusing = true;
 }
 
 CameraData EditorCamera::toCameraData() const {
@@ -99,6 +117,7 @@ void EditorCamera::mouseRotate(const glm::vec2& delta) {
 }
 
 void EditorCamera::mouseZoom(float delta) {
+  m_is_focusing = false;
   m_distance -= delta * zoomSpeed();
   if (m_distance < 1.0f) {
     m_focal_point += getForwardDirection();

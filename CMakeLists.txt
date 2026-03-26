@@ -50,6 +50,9 @@ add_executable(CASEngine
     src/utils/file_dialog.mm
     src/utils/utils.cpp
 
+    # TEMP: move it to it's own cmake file/library or something
+    vendor/ImGuizmo/ImGuizmo.cpp
+
     src/main.cpp
 
     ${APP_ICON}
@@ -66,7 +69,7 @@ target_compile_definitions(CASEngine PRIVATE GLM_ENABLE_EXPERIMENTAL)
 target_link_libraries(CASEngine PRIVATE Nexus::Nexus)
 target_link_libraries(CASEngine PRIVATE yaml-cpp::yaml-cpp)
 target_link_libraries(CASEngine PUBLIC "-framework Cocoa" "-framework UniformTypeIdentifiers")
-target_include_directories(CASEngine PUBLIC include vendor/stb/include vendor/tiny_obj/include vendor/EnTT/include vendor/IconsFontAwesome)
+target_include_directories(CASEngine PUBLIC include vendor/stb/include vendor/tiny_obj/include vendor/EnTT/include vendor/IconsFontAwesome vendor/ImGuizmo)
 
 add_custom_target(clean-all
     COMMAND ${CMAKE_COMMAND} -E rm -rf 

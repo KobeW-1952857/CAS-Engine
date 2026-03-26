@@ -12,6 +12,8 @@ class EditorCamera {
   void focusEntity(const glm::vec3& position, const float distance);
   void setViewportSize(float width, float height);
 
+  bool isFocussing() const { return m_is_focusing; }
+
   const glm::mat4& getViewMatrix() const { return m_view; }
   const glm::mat4& getProjectionMatrix() const { return m_projection; }
   glm::mat4 getViewProjectionMatrix() const { return m_projection * m_view; }
@@ -52,4 +54,8 @@ class EditorCamera {
   float m_viewport_width = 1280, m_viewport_height = 720;
 
   float m_normal_speed = 5.0f, m_fast_speed = 15.0f;
+
+  bool m_is_focusing = false;
+  glm::vec3 m_target_focal_point{0.0f};
+  float m_target_distance = 0.0f;
 };

@@ -1,9 +1,11 @@
 #include "editor/editor.h"
 
 #include <IconsFontAwesome7.h>
+#include <ImGui/imgui.h>
+#include <ImGuizmo.h>
 #include <Nexus/Log.h>
-#include <imgui.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <cstdlib>
 #include <glm/gtx/string_cast.hpp>
@@ -16,6 +18,8 @@
 #include "renderer/systems/bezier_renderer_system.h"
 #include "renderer/systems/line_renderer_system.h"
 #include "renderer/systems/mesh_renderer_system.h"
+#include "scene/components/parent_component.h"
+#include "scene/components/transform_component.h"
 #include "scene/entity.h"
 #include "scene/scene.h"
 #include "scene/systems/line_follower_system.h"
@@ -52,21 +56,9 @@ static void setTheme();
 
 void Editor::init() {
   setTheme();
-  ImGui::GetStyle().WindowRounding = 12.0f;
-  ImGui::GetStyle().FrameRounding = 12.0f;
-  ImGui::GetStyle().GrabRounding = 8.0f;
   ImGuiIO& io = ImGui::GetIO();
   io.Fonts->AddFontFromFileTTF(m_context.filesystem.resolvePath("engine://fonts/ComfortaaNerdFont-Regular.ttf").c_str(),
                                16.0f);
-  // ImFontConfig config;
-  // config.MergeMode = true;
-  // config.GlyphMinAdvanceX = 13.0f;
-  // config.GlyphOffset.y = 1.5f;
-  // config.GlyphOffset.x = 1.0f;
-  // config.PixelSnapH = true;
-  // io.Fonts->AddFontFromFileTTF(m_context.filesystem.resolvePath("engine://fonts/fa-solid-900.otf").c_str(), 13.0f,
-  //                              &config);
-  // io.Fonts->Build();
 
   m_context.renderer.init(m_context.filesystem);
   m_context.assets.setRenderer(&m_context.renderer);
@@ -137,7 +129,8 @@ void Editor::setContext(const std::shared_ptr<Scene>& scene) {
 void Editor::onUpdate(float dt) {
   m_context.clock.advanceFrame(dt);
 
-  if (m_viewport_focused || m_viewport_hovered) m_editor_camera.onUpdate(dt, ImGui::GetIO().WantCaptureKeyboard);
+  if (m_viewport_focused || m_viewport_hovered || m_editor_camera.isFocussing())
+    m_editor_camera.onUpdate(dt, ImGui::GetIO().WantCaptureKeyboard);
 
   if (m_active_scene) {
     for (uint64_t i = 0; i < m_context.clock.pendingTicks(); ++i) m_active_scene->onUpdate(m_context.clock.tickDt());
@@ -277,28 +270,43 @@ static bool ToggleButton(const char* label, bool toggled, ImVec2 size = ImVec2(0
 void Editor::drawViewport() {
   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
   ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_MenuBar);
+  auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
+  auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
+  auto viewportOffset = ImGui::GetWindowPos();
+  ImVec2 viewport_bounds_min = {viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y};
+  ImVec2 viewport_bounds_max = {viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y};
 
   if (ImGui::BeginMenuBar()) {
-    // ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 0));
     ImVec2 size(28, 0);
     if (ToggleButton(ICON_FA_STOP, m_context.clock.isStopped(), size)) m_context.clock.stop();
     if (ToggleButton(ICON_FA_PLAY, m_context.clock.isPlaying(), size)) m_context.clock.play();
     if (ToggleButton(ICON_FA_PAUSE, m_context.clock.isPaused(), size)) m_context.clock.pause();
     if (ImGui::Button(ICON_FA_FORWARD_FAST, size)) m_context.clock.step();
-    // ImGui::PopStyleVar();
+
+    ImGui::TextDisabled("|");
+    if (ToggleButton("T", m_gizmo_type == ImGuizmo::TRANSLATE, size)) m_gizmo_type = ImGuizmo::TRANSLATE;
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Translate (W)");
+    if (ToggleButton("R", m_gizmo_type == ImGuizmo::ROTATE, size)) m_gizmo_type = ImGuizmo::ROTATE;
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Rotate (E)");
+    if (ToggleButton("S", m_gizmo_type == ImGuizmo::SCALE, size)) m_gizmo_type = ImGuizmo::SCALE;
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Scale (R)");
 
     ImGui::TextDisabled("|");
     ImGui::Text("speed");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(100.0f);
     ImGui::SliderFloat("##speed", &m_context.clock.speed, 0.0f, 3.0f, "%.1fx");
+    // ImGui::TextDisabled("|");
+    // ImGui::Text("gizmo scale");
+    // ImGui::SameLine();
+    // ImGui::SetNextItemWidth(80.0f);
+    // ImGui::SliderFloat("##gizmosize", &m_gizmo_size, 0.01f, 0.5f, "%.2f");
     ImGui::TextDisabled("|");
     ImGui::Text("t = %.3fs", m_context.clock.simTime());
     ImGui::EndMenuBar();
   }
 
   m_viewport_focused = ImGui::IsWindowFocused();
-  m_viewport_hovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
 
   ImVec2 viewport_panel_size = ImGui::GetContentRegionAvail();
   if (m_viewport_size.x != viewport_panel_size.x || m_viewport_size.y != viewport_panel_size.y) {
@@ -310,19 +318,54 @@ void Editor::drawViewport() {
   // NOLINTNEXTLINE
   ImGui::Image(reinterpret_cast<void*>(texture_id), viewport_panel_size, ImVec2(0, 1), ImVec2(1, 0));
 
+  m_viewport_hovered = ImGui::IsItemHovered();
+
   drawAxisGizmo();
 
-  // Overlay toggles
-  // ImVec2 viewport_min = ImGui::GetItemRectMin();
-  // ImGui::SetCursorScreenPos(ImVec2(viewport_min.x + 8.0f, viewport_min.y + 8.0f));
-  // ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 0));
-  // if (m_grid_overlay) {
-  //   bool show = m_grid_overlay->enabled;
-  //   if (ImGui::Checkbox("Grid", &show)) m_grid_overlay->enabled = show;
-  // }
-  // ImGui::PopStyleVar();
+  // !TEMP
+  ImGuizmo::BeginFrame();
+  ImGuizmo::SetGizmoSizeClipSpace(m_gizmo_size);
+  ImGuizmo::SetOrthographic(false);
+  ImGuizmo::SetDrawlist();
+  ImGuizmo::SetRect(viewport_bounds_min.x, viewport_bounds_min.y, viewport_bounds_max.x - viewport_bounds_min.x,
+                    viewport_bounds_max.y - viewport_bounds_min.y);
+  if (std::holds_alternative<Entity>(m_selection_context)) {
+    auto entity = std::get<Entity>(m_selection_context);
+    if (entity && entity.hasComponent<TransformComponent>()) {
+      auto& tc = entity.getComponent<TransformComponent>();
+      auto world_transform = tc.getWorldTransform(*m_active_scene, entity);
+      glm::mat4 delta(1.0f);
+      ImGuizmo::Manipulate(glm::value_ptr(m_editor_camera.getViewMatrix()),
+                           glm::value_ptr(m_editor_camera.getProjectionMatrix()),
+                           static_cast<ImGuizmo::OPERATION>(m_gizmo_type), ImGuizmo::WORLD,
+                           glm::value_ptr(world_transform), glm::value_ptr(delta));
+      if (ImGuizmo::IsUsing()) {
+        if (entity.hasComponent<ParentComponent>()) {
+          Entity parent = m_active_scene->getEntity(entity.getComponent<ParentComponent>().parent_id);
+          glm::mat4 parent_transform = glm::mat4(1.0f);
+          if (parent)
+            parent_transform = parent.getComponent<TransformComponent>().getWorldTransform(*m_active_scene, parent);
+          glm::mat4 local_transform = glm::inverse(parent_transform) * world_transform;
+          glm::vec3 translation, rotation, scale;
+          ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(local_transform), glm::value_ptr(translation),
+                                                glm::value_ptr(rotation), glm::value_ptr(scale));
+          tc.translation = translation;
+          tc.rotation = glm::radians(rotation);
+          tc.scale = scale;
+        } else {
+          glm::vec3 translation, rotation, scale;
+          ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(world_transform), glm::value_ptr(translation),
+                                                glm::value_ptr(rotation), glm::value_ptr(scale));
+          tc.translation = translation;
+          tc.rotation = glm::radians(rotation);
+          tc.scale = scale;
+        }
+      }
+    }
+  }
+  // !END TEMP
 
-  if (ImGui::IsMouseClicked(0) && m_viewport_hovered) {
+  if (ImGui::IsMouseClicked(0) && m_viewport_hovered && !ImGuizmo::IsUsingAny()) {
     ImVec2 mouse_pos = ImGui::GetMousePos();
     ImVec2 viewport_min = ImGui::GetItemRectMin();
 
@@ -377,9 +420,9 @@ void Editor::drawAxisGizmo() {
     ImU32 color;
     const char* label;
   } axes[] = {
-      {{1, 0, 0}, IM_COL32(210, 60, 60, 255), "X"},
-      {{0, 1, 0}, IM_COL32(60, 210, 60, 255), "Y"},
-      {{0, 0, 1}, IM_COL32(60, 60, 210, 255), "Z"},
+      {{1, 0, 0}, IM_COL32(255, 89, 89, 255), "X"},
+      {{0, 1, 0}, IM_COL32(115, 217, 89, 255), "Y"},
+      {{0, 0, 1}, IM_COL32(64, 115, 217, 255), "Z"},
   };
 
   for (auto& [dir, color, label] : axes) {
@@ -394,24 +437,31 @@ void Editor::handleShortcuts() {
   auto& io = ImGui::GetIO();
   if (io.WantTextInput) return;
 
-  if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S)) {
-    m_context.project.save();
-  }
-  if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O)) {
-    m_context.project.load();
-  }
-  if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_N)) {
-    m_context.project.New();
-  }
+  if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_S)) m_context.project.save();
+  if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_O)) m_context.project.load();
+  if (io.KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_N)) m_context.project.New();
+
   if (ImGui::IsKeyPressed(ImGuiKey_F)) {
-    // Focus on selected object
-    // if (std::holds_alternative<Entity>(m_selection_context)) {
-    //   auto entity = std::get<Entity>(m_selection_context);
-    //   if (entity) {
-    //     auto tc = entity.getComponent<TransformComponent>();
-    //     m_editor_camera.focusEntity(tc.Translation, glm::compMax(tc.Scale) * 5);
-    //   }
-    // }
+    if (std::holds_alternative<Entity>(m_selection_context)) {
+      auto entity = std::get<Entity>(m_selection_context);
+      if (entity && entity.hasComponent<TransformComponent>()) {
+        auto& tc = entity.getComponent<TransformComponent>();
+        glm::mat4 world_transform = tc.getWorldTransform(*m_active_scene, entity);
+        glm::vec3 world_pos = glm::vec3(world_transform[3]);  // Column 3 represents the translation
+        float max_scale = std::max({std::abs(tc.scale.x), std::abs(tc.scale.y), std::abs(tc.scale.z)});
+        m_editor_camera.focusEntity(world_pos, max_scale * 5.0f);
+      }
+    }
+  }
+
+  // Prevent changing modes while right-clicking (flying the camera)
+  if (!ImGui::IsMouseDown(ImGuiMouseButton_Right)) {
+    if (ImGui::IsKeyPressed(ImGuiKey_W))
+      m_gizmo_type = ImGuizmo::TRANSLATE;
+    else if (ImGui::IsKeyPressed(ImGuiKey_E))
+      m_gizmo_type = ImGuizmo::ROTATE;
+    else if (ImGui::IsKeyPressed(ImGuiKey_R))
+      m_gizmo_type = ImGuizmo::SCALE;
   }
 }
 
@@ -717,6 +767,26 @@ void StyleMonoTealLight(ImGuiStyle* dst) {
 
 static void setTheme() {
   StyleMonoTealLight(nullptr);
+
+  // Setup nicer, softer ImGuizmo colors (Blender/Unity style)
+  ImGuizmo::Style& gizmo_style = ImGuizmo::GetStyle();
+  gizmo_style.Colors[ImGuizmo::DIRECTION_X] = ImVec4(0.85f, 0.25f, 0.35f, 1.00f);
+  gizmo_style.Colors[ImGuizmo::DIRECTION_Y] = ImVec4(0.45f, 0.85f, 0.35f, 1.00f);
+  gizmo_style.Colors[ImGuizmo::DIRECTION_Z] = ImVec4(0.25f, 0.45f, 0.85f, 1.00f);
+  gizmo_style.Colors[ImGuizmo::PLANE_X] = ImVec4(0.85f, 0.25f, 0.35f, 0.38f);
+  gizmo_style.Colors[ImGuizmo::PLANE_Y] = ImVec4(0.45f, 0.85f, 0.35f, 0.38f);
+  gizmo_style.Colors[ImGuizmo::PLANE_Z] = ImVec4(0.25f, 0.45f, 0.85f, 0.38f);
+  gizmo_style.Colors[ImGuizmo::SELECTION] = ImVec4(1.00f, 0.80f, 0.20f, 0.60f);
+  gizmo_style.Colors[ImGuizmo::ROTATION_USING_BORDER] = ImVec4(1.00f, 0.80f, 0.20f, 1.00f);
+  gizmo_style.Colors[ImGuizmo::ROTATION_USING_FILL] = ImVec4(1.00f, 0.80f, 0.20f, 0.50f);
+
+  // Increase thickness for better visibility
+  gizmo_style.TranslationLineThickness = 4.0f;
+  gizmo_style.TranslationLineArrowSize = 8.0f;
+  gizmo_style.RotationLineThickness = 3.0f;
+  gizmo_style.RotationOuterLineThickness = 4.0f;
+  gizmo_style.ScaleLineThickness = 4.0f;
+  gizmo_style.ScaleLineCircleSize = 8.0f;
   // ImGuiStyle& style = ImGui::GetStyle();
   // ImVec4* colors = style.Colors;
 

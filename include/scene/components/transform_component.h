@@ -58,7 +58,10 @@ struct TransformComponent : ComponentDefaults {
   }
   static void drawUI(TransformComponent& c, AppContext& ctx) {
     ImGui::DragFloat3("Translation", glm::value_ptr(c.translation));
-    ImGui::DragFloat3("Rotation", glm::value_ptr(c.rotation));
+    glm::vec3 rotation_degrees = glm::degrees(c.rotation);
+    if (ImGui::DragFloat3("Rotation", glm::value_ptr(rotation_degrees))) {
+      c.rotation = glm::radians(rotation_degrees);
+    }
     ImGui::DragFloat3("Scale", glm::value_ptr(c.scale));
   }
 };

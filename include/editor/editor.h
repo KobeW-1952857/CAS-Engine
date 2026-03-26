@@ -53,4 +53,7 @@ class Editor {
   glm::vec2 m_viewport_size{0.0f, 0.0f};
   bool m_viewport_focused = false;
   bool m_viewport_hovered = false;
+
+  int m_gizmo_type = 7;  // ImGuizmo::TRANSLATE
+  float m_gizmo_size = 0.1f;
 };
