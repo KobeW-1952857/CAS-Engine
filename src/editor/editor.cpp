@@ -331,37 +331,7 @@ void Editor::drawViewport() {
                     viewport_bounds_max.y - viewport_bounds_min.y);
   if (std::holds_alternative<Entity>(m_selection_context)) {
     auto entity = std::get<Entity>(m_selection_context);
-    if (entity && entity.hasComponent<TransformComponent>()) {
-      auto& tc = entity.getComponent<TransformComponent>();
-      auto world_transform = tc.getWorldTransform(*m_active_scene, entity);
-      glm::mat4 delta(1.0f);
-      ImGuizmo::Manipulate(glm::value_ptr(m_editor_camera.getViewMatrix()),
-                           glm::value_ptr(m_editor_camera.getProjectionMatrix()),
-                           static_cast<ImGuizmo::OPERATION>(m_gizmo_type), ImGuizmo::WORLD,
-                           glm::value_ptr(world_transform), glm::value_ptr(delta));
-      if (ImGuizmo::IsUsing()) {
-        if (entity.hasComponent<ParentComponent>()) {
-          Entity parent = m_active_scene->getEntity(entity.getComponent<ParentComponent>().parent_id);
-          glm::mat4 parent_transform = glm::mat4(1.0f);
-          if (parent)
-            parent_transform = parent.getComponent<TransformComponent>().getWorldTransform(*m_active_scene, parent);
-          glm::mat4 local_transform = glm::inverse(parent_transform) * world_transform;
-          glm::vec3 translation, rotation, scale;
-          ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(local_transform), glm::value_ptr(translation),
-                                                glm::value_ptr(rotation), glm::value_ptr(scale));
-          tc.translation = translation;
-          tc.rotation = glm::radians(rotation);
-          tc.scale = scale;
-        } else {
-          glm::vec3 translation, rotation, scale;
-          ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(world_transform), glm::value_ptr(translation),
-                                                glm::value_ptr(rotation), glm::value_ptr(scale));
-          tc.translation = translation;
-          tc.rotation = glm::radians(rotation);
-          tc.scale = scale;
-        }
-      }
-    }
+    m_gizmo_system.onImGuiRender(entity, *m_active_scene, m_editor_camera, m_gizmo_type);
   }
   // !END TEMP
 

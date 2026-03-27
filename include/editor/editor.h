@@ -10,6 +10,7 @@
 #include "editor/panels/properties.h"
 #include "editor/panels/scene_hierarchy.h"
 #include "editor/selection_context.h"
+#include "editor/viewport_gizmo_system.h"
 #include "renderer/framebuffer.h"
 #include "scene/scene.h"
 
@@ -45,6 +46,7 @@ class Editor {
   AssetBrowser m_asset_browser_panel;
   ConsolePanel m_console_panel;
   PropertiesPanel m_properties_panel;
+  ViewportGizmoSystem m_gizmo_system;
 
   std::optional<GridOverlay> m_grid_overlay;
 
