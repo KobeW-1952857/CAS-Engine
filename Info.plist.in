@@ -8,7 +8,7 @@
     <string>be.wernerkobe.CASEngine</string>
     <key>CFBundleName</key>
     <string>${MACOSX_BUNDLE_BUNDLE_NAME}</string>
-    <key>CFBundleIconName</key>
+    <key>CFBundleIconFile</key>
     <string>CASEngine</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>

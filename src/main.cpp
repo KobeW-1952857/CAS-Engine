@@ -17,6 +17,8 @@ int main(int argc, char** argv) {
   ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_ViewportsEnable;
   window->setVSync(true);
 
+  glfwMaximizeWindow(static_cast<GLFWwindow*>(window->getNativeWindow()));
+
   int width, height;
   glfwGetFramebufferSize(static_cast<GLFWwindow*>(window->getNativeWindow()), &width, &height);
 

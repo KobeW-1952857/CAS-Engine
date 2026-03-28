@@ -14,6 +14,14 @@
 #include "renderer/framebuffer.h"
 #include "scene/scene.h"
 
+struct EditorPrefs {
+  std::vector<std::string> recent_projects;
+
+  void load(const std::filesystem::path& path);
+  void save(const std::filesystem::path& path) const;
+  void addRecentProject(const std::string& project_path);
+};
+
 class Editor {
  public:
   Editor();
@@ -25,6 +33,7 @@ class Editor {
   void onImGuiRender();
 
  private:
+  void drawLauncher();
   void drawDockspace();
   void drawViewport();
   void drawAxisGizmo();
@@ -58,4 +67,7 @@ class Editor {
 
   int m_gizmo_type = 7;  // ImGuizmo::TRANSLATE
   float m_gizmo_size = 0.1f;
+
+  EditorPrefs m_prefs;
+  std::filesystem::path m_prefs_path = "editor_prefs.yaml";
 };

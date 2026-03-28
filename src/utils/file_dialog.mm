@@ -23,6 +23,30 @@ static NSArray<UTType *> *ParseFileTypeFilter(const char *filter) {
   return [allowedTypes copy];
 }
 
+std::string FileDialog::openFolder(){
+  __block std::string openPath = std::string();
+
+  void (^openPanelBlock)(void) = ^{
+    NSOpenPanel *panel = [NSOpenPanel openPanel];
+    panel.canChooseFiles = NO;
+    panel.canChooseDirectories = YES;
+    panel.allowsMultipleSelection = NO;
+
+    if ([panel runModal] == NSModalResponseOK) {
+      NSURL *url = [panel URL];
+      openPath = [[url path] UTF8String];
+
+    } 
+  };
+
+  if ([NSThread isMainThread]) {
+    openPanelBlock();
+  } else {
+    dispatch_sync(dispatch_get_main_queue(), openPanelBlock);
+  }
+  return openPath;
+}
+
 std::string FileDialog::openFile(const char *filter) {
   __block std::string openPath = std::string();
 

@@ -16,7 +16,7 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(yaml-cpp)
 
 
-set(APP_ICON "${CMAKE_CURRENT_SOURCE_DIR}/CASEngine.icon")
+set(APP_ICON "CASEngine.icns")
 set_source_files_properties(${APP_ICON} PROPERTIES
     MACOSX_PACKAGE_LOCATION "Resources"
 )

@@ -11,16 +11,38 @@
 #include "yaml-cpp/emittermanip.h"
 
 void Project::load() {
-  auto path = FileDialog::openFile();
+  auto path = FileDialog::openFolder();
   Nexus::Logger::debug("Loading project {}...", path);
   if (!path.empty()) load(path);
 }
 void Project::load(const std::filesystem::path& path) {
-  if (!deserialize(path)) {
-    Nexus::Logger::error("Failed to load project '{}'", path.string());
+  if (!std::filesystem::exists(path)) {
+    Nexus::Logger::error("Project '{}' does not exist.", path.string());
     return;
   }
-  Nexus::Logger::info("Successfully loaded project '{}'", path.string());
+  if (!std::filesystem::is_directory(path)) {
+    Nexus::Logger::error("Project '{}' is not a directory.", path.string());
+    return;
+  }
+  // Find project file inside directory
+  std::filesystem::path project_file;
+  for (const auto& entry : std::filesystem::directory_iterator(path)) {
+    if (entry.is_regular_file() && entry.path().extension() == ".cproj") {
+      project_file = entry.path();
+      break;
+    }
+  }
+
+  if (project_file.empty()) {
+    Nexus::Logger::error("No .cproj file found in directory '{}'", path.string());
+    return;
+  }
+
+  if (!deserialize(project_file)) {
+    Nexus::Logger::error("Failed to load project '{}'", project_file.string());
+    return;
+  }
+  Nexus::Logger::info("Successfully loaded project '{}'", project_file.string());
   m_filesystem.setProjectRoot(m_config.path);
   m_assets.init();
   m_has_project = true;

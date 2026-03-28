@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
+#include <fstream>
 #include <glm/gtx/string_cast.hpp>
 #include <variant>
 
@@ -24,6 +25,53 @@
 #include "scene/scene.h"
 #include "scene/systems/line_follower_system.h"
 #include "utils/utils.h"
+
+void EditorPrefs::load(const std::filesystem::path& path) {
+  if (!std::filesystem::exists(path)) return;
+
+  try {
+    YAML::Node data = YAML::LoadFile(path.string());
+    auto recents = data["RecentProjects"];
+    if (recents) {
+      for (const auto& proj : recents) {
+        recent_projects.push_back(proj.as<std::string>());
+      }
+    }
+  } catch (const YAML::Exception& e) {
+    Nexus::Logger::error("Failed to load editor prefs: {}", e.what());
+  }
+}
+
+void EditorPrefs::save(const std::filesystem::path& path) const {
+  YAML::Emitter out;
+  out << YAML::BeginMap;
+  out << YAML::Key << "RecentProjects" << YAML::Value << YAML::BeginSeq;
+  for (const auto& proj : recent_projects) {
+    out << proj;
+  }
+  out << YAML::EndSeq;
+  out << YAML::EndMap;
+
+  std::ofstream fout(path);
+  fout << out.c_str();
+}
+
+void EditorPrefs::addRecentProject(const std::string& project_path) {
+  std::string safe_path = project_path;
+  // If the project is already in the list, remove it so we can push it to the top
+  auto it = std::find(recent_projects.begin(), recent_projects.end(), project_path);
+  if (it != recent_projects.end()) {
+    recent_projects.erase(it);
+  }
+
+  // Insert at the front (most recent)
+  recent_projects.insert(recent_projects.begin(), std::move(safe_path));
+
+  // Optional: Keep only the 10 most recent projects
+  if (recent_projects.size() > 10) {
+    recent_projects.pop_back();
+  }
+}
 
 Editor::Editor() : m_viewport_size(1280, 720), m_asset_browser_panel(m_context), m_properties_panel(m_context) {
   init();
@@ -118,6 +166,7 @@ void Editor::init() {
   });
 
   m_grid_overlay.emplace(m_context.filesystem);
+  m_prefs.load(m_prefs_path);
 }
 
 void Editor::setContext(const std::shared_ptr<Scene>& scene) {
@@ -161,6 +210,81 @@ void Editor::onUpdate(float dt) {
   m_framebuffer->unbind();
 }
 
+void Editor::drawLauncher() {
+  ImGuiViewport* viewport = ImGui::GetMainViewport();
+  ImVec2 center = viewport->GetCenter();
+  ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+  ImGui::SetNextWindowSize(ImVec2(700, 450));
+
+  ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoMove |
+                                  ImGuiWindowFlags_NoSavedSettings;
+
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(20.0f, 20.0f));
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 10.0f);
+
+  ImGui::Begin("CAS Engine Launcher", nullptr, window_flags);
+
+  // --- LEFT COLUMN: Engine Info & Actions ---
+  ImGui::BeginChild("LeftPanel", ImVec2(200, 0), true);
+
+  // Engine Title / Logo Area
+  ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);  // Assuming you might have a larger font loaded
+  ImGui::TextColored(ImVec4(0.0f, 0.70f, 0.45f, 1.0f), ICON_FA_CUBES " CAS Engine");
+  ImGui::PopFont();
+  ImGui::Separator();
+  ImGui::Spacing();
+
+  // Action Buttons
+  if (ImGui::Button(ICON_FA_FOLDER_OPEN " Open Project", ImVec2(-1, 40))) {
+    m_context.project.load();
+    m_prefs.addRecentProject(m_context.project.getConfig().path);
+    m_prefs.save(m_prefs_path);
+    openScene(m_context.project.getConfig().start_scene);
+  }
+
+  ImGui::Spacing();
+
+  if (ImGui::Button(ICON_FA_PLUS " New Project", ImVec2(-1, 40))) {
+    m_context.project.New();
+  }
+  ImGui::EndChild();
+
+  ImGui::SameLine();
+
+  // --- RIGHT COLUMN: Recent Projects ---
+  ImGui::BeginChild("RightPanel", ImVec2(0, 0), false);
+  ImGui::TextDisabled("Recent Projects");
+  ImGui::Separator();
+  ImGui::Spacing();
+
+  if (m_prefs.recent_projects.empty()) {
+    ImGui::TextDisabled("No recent projects found.");
+  } else {
+    for (const auto& proj_path : m_prefs.recent_projects) {
+      // Display just the folder name or the full path
+      std::filesystem::path p(proj_path);
+      std::string display_name = std::format(ICON_FA_FILE_CODE "  {}", p.filename().string().c_str());
+
+      if (ImGui::Selectable(display_name.c_str(), false, 0, ImVec2(0, 30))) {
+        m_prefs.addRecentProject(proj_path);
+        m_prefs.save(m_prefs_path);
+
+        m_context.project.load(p);
+        openScene(m_context.project.getConfig().start_scene);
+        break;
+      }
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%s", proj_path.c_str());
+      }
+    }
+  }
+
+  ImGui::EndChild();
+
+  ImGui::End();
+  ImGui::PopStyleVar(2);
+}
+
 void Editor::onImGuiRender() {
   ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport());
 
@@ -176,16 +300,7 @@ void Editor::onImGuiRender() {
     drawDockspace();
     drawViewport();
   } else {
-    ImGui::Begin("Open/create Project");
-    if (ImGui::Button("Open")) {
-      m_context.project.load();
-      openScene(m_context.project.getConfig().start_scene);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("New")) {
-      m_context.project.New();
-    }
-    ImGui::End();
+    drawLauncher();
   }
 }
 
