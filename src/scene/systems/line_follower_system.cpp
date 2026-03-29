@@ -6,6 +6,31 @@
 #include "scene/components.h"
 #include "scene/scene.h"
 
+float evaluate_easing(LineFollowerComponent lc, float t) {
+  switch (lc.easing) {
+    case LineFollowerComponent::Easing::Linear:
+      return t;
+    case LineFollowerComponent::Easing::EaseIn:
+      return t * t;
+    case LineFollowerComponent::Easing::EaseOut:
+      return t * (2 - t);
+    case LineFollowerComponent::Easing::EaseInOut:
+      return t < 0.5f ? 2 * t * t : -1 + (4 - 2 * t) * t;
+    default:  // Custom or COUNT
+      // Bernstein polynomial for cubic bezier with control points (0,0), (c1.x, c1.y), (c2.x, c2.y), (1,1)
+      float u = 1 - t;
+      float tt = t * t;
+      float uu = u * u;
+      float uuu = uu * u;
+      float ttt = tt * t;
+      float c1x = lc.control_points[0].x;
+      float c1y = lc.control_points[0].y;
+      float c2x = lc.control_points[1].x;
+      float c2y = lc.control_points[1].y;
+      return uuu * 0 + 3 * uu * t * c1y + 3 * u * tt * c2y + ttt * 1;
+  }
+}
+
 void LineFollowerSystem::onUpdate(Scene& scene, float dt) {
   scene.forEachEntity<LineFollowerComponent>([&](Entity e) {
     auto& follower = e.getComponent<LineFollowerComponent>();
@@ -28,7 +53,9 @@ void LineFollowerSystem::onUpdate(Scene& scene, float dt) {
             else
               follower.arc_length = std::min(follower.arc_length, length);
 
-            float t = curve.tFromArcLength(follower.arc_length);
+            float t_linear = follower.arc_length / length;
+            float t_eased = evaluate_easing(follower, t_linear);
+            float t = curve.tFromArcLength(t_eased * length);
 
             glm::vec3 new_position = curve.evaluate(t);
             auto& transform = e.getComponent<TransformComponent>();
