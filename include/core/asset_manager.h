@@ -32,6 +32,7 @@ class AssetManager {
   std::unordered_map<UUID, AssetMetadata> getAssetsMetadataOfType();
   UUID getHandleFromPath(const std::filesystem::path& path);
   AssetMetadata& getAssetMetadata(UUID handle);
+  void renameAsset(UUID handle, const std::filesystem::path& new_path);
 
   template <typename T>
   std::shared_ptr<T> getAsset(UUID handle);

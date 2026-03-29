@@ -1,6 +1,5 @@
 #include "editor/editor.h"
 
-#include <IconsFontAwesome7.h>
 #include <ImGui/imgui.h>
 #include <ImGuizmo.h>
 #include <Nexus/Log.h>
@@ -14,16 +13,17 @@
 
 #include "core/asset_manager.h"
 #include "core/project.h"
+#include "editor/panels/debug_icons.h"
 #include "renderer/framebuffer.h"
 #include "renderer/renderer.h"
 #include "renderer/systems/bezier_renderer_system.h"
 #include "renderer/systems/line_renderer_system.h"
 #include "renderer/systems/mesh_renderer_system.h"
-#include "scene/components/parent_component.h"
 #include "scene/components/transform_component.h"
 #include "scene/entity.h"
 #include "scene/scene.h"
 #include "scene/systems/line_follower_system.h"
+#include "utils/IconBindings.h"
 #include "utils/utils.h"
 
 void EditorPrefs::load(const std::filesystem::path& path) {
@@ -73,6 +73,26 @@ void EditorPrefs::addRecentProject(const std::string& project_path) {
   }
 }
 
+void loadIconFonts(const std::filesystem::path& fonts_dir, float font_size) {
+  ImGuiIO& io = ImGui::GetIO();
+  Nexus::Logger::trace("Loading icon fonts from directory: {}", fonts_dir.string());
+
+  ImFontConfig config;
+  config.MergeMode = true;
+  config.PixelSnapH = true;
+
+  for (const auto& entry : std::filesystem::directory_iterator(fonts_dir)) {
+    Nexus::Logger::trace("Checking font file: {}", entry.path().filename().string());
+    if (!entry.is_regular_file()) continue;
+    if (entry.path().extension() != ".ttf") continue;
+    Nexus::Logger::trace("Loading icon font: {}", entry.path().filename().string());
+
+    io.Fonts->AddFontFromFileTTF(entry.path().string().c_str(), font_size, &config);
+  }
+
+  io.Fonts->Build();
+}
+
 Editor::Editor() : m_viewport_size(1280, 720), m_asset_browser_panel(m_context), m_properties_panel(m_context) {
   init();
 }
@@ -105,8 +125,13 @@ static void setTheme();
 void Editor::init() {
   setTheme();
   ImGuiIO& io = ImGui::GetIO();
+  ImFontConfig config;
+  config.PixelSnapH = true;
+  ImWchar ranges[] = {0x0000, 0xF1AF0};
+
   io.Fonts->AddFontFromFileTTF(m_context.filesystem.resolvePath("engine://fonts/ComfortaaNerdFont-Regular.ttf").c_str(),
-                               16.0f);
+                               16.0f, &config, ranges);
+  // loadIconFonts(m_context.filesystem.resolvePath("engine://fonts/icons"), 16.0f);
 
   m_context.renderer.init(m_context.filesystem);
   m_context.assets.setRenderer(&m_context.renderer);
@@ -184,6 +209,7 @@ void Editor::onUpdate(float dt) {
   if (m_active_scene) {
     for (uint64_t i = 0; i < m_context.clock.pendingTicks(); ++i) m_active_scene->onUpdate(m_context.clock.tickDt());
   }
+  m_asset_browser_panel.onUpdate(dt);
 
   m_framebuffer->resize(static_cast<uint32_t>(m_viewport_size.x), static_cast<uint32_t>(m_viewport_size.y));
 
@@ -283,6 +309,8 @@ void Editor::drawLauncher() {
 
   ImGui::End();
   ImGui::PopStyleVar(2);
+
+  drawNerdFontRanges(nullptr);
 }
 
 void Editor::onImGuiRender() {
@@ -299,6 +327,7 @@ void Editor::onImGuiRender() {
 
     drawDockspace();
     drawViewport();
+    drawDebugIconWindow(nullptr);
   } else {
     drawLauncher();
   }

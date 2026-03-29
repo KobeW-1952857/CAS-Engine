@@ -70,7 +70,7 @@ target_compile_definitions(CASEngine PRIVATE GLM_ENABLE_EXPERIMENTAL)
 target_link_libraries(CASEngine PRIVATE Nexus::Nexus)
 target_link_libraries(CASEngine PRIVATE yaml-cpp::yaml-cpp)
 target_link_libraries(CASEngine PUBLIC "-framework Cocoa" "-framework UniformTypeIdentifiers")
-target_include_directories(CASEngine PUBLIC include vendor/stb/include vendor/tiny_obj/include vendor/EnTT/include vendor/IconsFontAwesome vendor/ImGuizmo)
+target_include_directories(CASEngine PUBLIC include vendor/stb/include vendor/tiny_obj/include vendor/EnTT/include vendor/IconFontCppHeaders vendor/ImGuizmo)
 
 add_custom_target(clean-all
     COMMAND ${CMAKE_COMMAND} -E rm -rf 

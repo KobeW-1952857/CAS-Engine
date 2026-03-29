@@ -1,9 +1,0 @@
-Material:
-  ShaderHandle: 3
-  Properties:
-    - Name: u_light_pos
-      Type: vec3
-      Value: [13.920071, 5.592227, 19.45701]
-    - Name: u_color
-      Type: vec4
-      Value: [0.23274703, 0.7669321, 0.8186275, 1]

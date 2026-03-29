@@ -1,22 +1,19 @@
 Assets:
-  - ID: 6526512160245485075
-    Type: 5
-    Filepath: project://Sample scene copy.casscene
-  - ID: 15127160040946736779
-    Type: 4
-    Filepath: project://assets/New Material.casmat
-  - ID: 7803370356633452577
-    Type: 5
-    Filepath: project://Sample scene.casscene
   - ID: 13791123961452530115
     Type: 4
     Filepath: project://assets/lit_2.casmat
+  - ID: 2062264641686312382
+    Type: 2
+    Filepath: project://assets/models/Suzanne.obj
+  - ID: 7803370356633452577
+    Type: 5
+    Filepath: project://Line Following Scene.casscene
+  - ID: 6526512160245485075
+    Type: 5
+    Filepath: project://Deformation Scene.casscene
   - ID: 4
     Type: 1
     Filepath: engine//materials/unlit.casmat
   - ID: 17467985531564180736
     Type: 4
     Filepath: project://assets/lit_1.casmat
-  - ID: 16899454287262494091
-    Type: 4
-    Filepath: project://assets/New Material copy.casmat

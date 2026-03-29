@@ -68,16 +68,6 @@ void PropertiesPanel::drawMaterial(const std::shared_ptr<Material>& material, As
   auto& shader = material->shader;
   auto& current_meta = m_context.assets.getAssetMetadata(shader->handle);
 
-  // Rename
-  {
-    std::string material_name = meta_data.filepath.stem().string();
-    if (ImGui::InputText("##material_name", &material_name)) {
-      std::filesystem::path new_path = meta_data.filepath.parent_path() / (material_name + ".casmat");
-      std::filesystem::rename(meta_data.filepath, new_path);
-      meta_data.filepath = new_path;
-    }
-  }
-
   ImGui::Text("Shader");
   ImGui::SameLine();
   if (ImGui::BeginCombo("##shader", current_meta.filepath.stem().c_str())) {
@@ -204,6 +194,21 @@ void PropertiesPanel::onImGuiRender(SelectionContext& selection_context, Scene* 
     auto id = std::get<UUID>(selection_context);
     auto& meta = m_context.assets.getAssetMetadata(id);
 
+    auto path = meta.filepath;
+    auto name = path.stem().string();
+    ImGui::SetNextItemWidth(-1.0f);
+    ImGui::InputText("##AssetName", &name);
+    if (ImGui::IsItemDeactivatedAfterEdit()) {
+      std::filesystem::path parent = path.parent_path();
+      std::string new_filename = name + path.extension().string();
+
+      // If parent is empty or just "project:", ensure we don't lose the protocol
+      std::filesystem::path new_path = (parent.empty() || parent == "project:")
+                                           ? std::filesystem::path("project://") / new_filename
+                                           : parent / new_filename;
+
+      m_context.assets.renameAsset(id, new_path);
+    }
     switch (meta.type) {
       case AssetType::Material: {
         auto asset = m_context.assets.getAsset<Material>(id);

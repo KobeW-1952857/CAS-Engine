@@ -1,0 +1,12 @@
+Entities:
+  - ID: 10004101596907624391
+    TagComponent:
+      Tag: Suzanne
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    MeshComponent:
+      MeshHandle: 2062264641686312382
+    MaterialComponent:
+      MaterialHandle: 17467985531564180736

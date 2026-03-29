@@ -14,8 +14,17 @@ class AssetBrowser {
   void setDoubleClickCallback(std::function<void(UUID)> callback) { m_on_double_click = std::move(callback); }
 
  private:
+  struct AssetContextMenu {
+    bool can_create_folder = false;
+    bool can_create_material = false;
+    bool can_create_scene = false;
+    bool can_delete = false;
+    std::filesystem::path path;  // relevant path for the actions
+  };
   void drawDirectoryNode(const std::filesystem::path& path, SelectionContext& selection_context);
   void drawFileNode(const std::filesystem::path& path, SelectionContext& selection_context);
+  void drawContextMenu(const AssetContextMenu& menu);
+  AssetContextMenu generateContextMenu(const std::filesystem::path& path);
 
  private:
   AppContext& m_context;
@@ -23,4 +32,5 @@ class AssetBrowser {
   std::filesystem::path m_selected;
 
   std::function<void(UUID)> m_on_double_click;
+  std::unordered_map<std::filesystem::path, float> m_deleting;
 };

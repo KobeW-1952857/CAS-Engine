@@ -196,3 +196,25 @@ void AssetManager::syncFileSystem() {
   // Save registry if needed
   if (registry_modified) serialize();
 }
+
+void AssetManager::renameAsset(UUID handle, const std::filesystem::path& new_path) {
+  if (!s_asset_registry.contains(handle)) {
+    Nexus::Logger::error("Attempted to rename non-existent asset with handle {}", static_cast<uint64_t>(handle));
+    return;
+  }
+
+  auto& meta = s_asset_registry[handle];
+  std::filesystem::path old_abs_path = m_filesystem.resolvePath(meta.filepath);
+  std::filesystem::path new_abs_path = m_filesystem.resolvePath(new_path);
+
+  std::error_code ec;
+  std::filesystem::rename(old_abs_path, new_abs_path, ec);
+  if (ec) {
+    Nexus::Logger::error("Failed to rename asset from '{}' to '{}': {}", old_abs_path.string(), new_abs_path.string(),
+                         ec.message());
+    return;
+  }
+
+  meta.filepath = new_path;
+  serialize();
+}

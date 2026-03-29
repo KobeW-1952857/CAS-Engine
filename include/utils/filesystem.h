@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Nexus/Log.h>
+
 #include <filesystem>
 
 #ifdef _WIN32
@@ -52,6 +54,26 @@ class FileSystem {
 #endif
   }
 
+  void createDirectory(const std::filesystem::path& path) {
+    std::error_code ec;
+    std::filesystem::create_directory(path, ec);
+    if (ec) Nexus::Logger::error("Failed to create directory '{}': {}", path.string(), ec.message());
+  }
+
+  void deletePath(const std::filesystem::path& path) {
+    std::error_code ec;
+    std::filesystem::remove_all(path, ec);
+    if (ec) Nexus::Logger::error("Failed to delete '{}': {}", path.string(), ec.message());
+  }
+
+  void renamePath(const std::filesystem::path& old_path, const std::filesystem::path& new_path) {
+    std::error_code ec;
+    std::filesystem::rename(old_path, new_path, ec);
+    if (ec)
+      Nexus::Logger::error("Failed to rename '{}' to '{}': {}", old_path.string(), new_path.string(), ec.message());
+  }
+
+ private:
   std::filesystem::path m_exe_dir = FileSystem::getExecutableDir();
   std::filesystem::path m_engine_root;
   std::filesystem::path m_project_root;
