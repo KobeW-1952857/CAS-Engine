@@ -19,7 +19,8 @@ class AssetBrowser {
     bool can_create_material = false;
     bool can_create_scene = false;
     bool can_delete = false;
-    std::filesystem::path path;  // relevant path for the actions
+    std::filesystem::path path;
+    std::vector<std::pair<const char*, std::function<void()>>> custom_items;
   };
   void drawDirectoryNode(const std::filesystem::path& path, SelectionContext& selection_context);
   void drawFileNode(const std::filesystem::path& path, SelectionContext& selection_context);

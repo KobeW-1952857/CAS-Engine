@@ -8,7 +8,7 @@ Assets:
     Filepath: engine://models/sphere.obj
   - ID: 3
     Type: 3
-    Filepath: engine://shaders/default
+    Filepath: engine://shaders/unlit
     Default: true
   - ID: 4
     Type: 4

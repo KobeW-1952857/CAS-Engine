@@ -4,6 +4,7 @@
 #include "components/bezier_component.h"
 #include "components/children_component.h"
 #include "components/id_component.h"
+#include "components/latice_component.h"
 #include "components/line_component.h"
 #include "components/line_follower_component.h"
 #include "components/material_component.h"

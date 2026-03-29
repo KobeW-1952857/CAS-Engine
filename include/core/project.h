@@ -30,6 +30,8 @@ class Project {
   std::filesystem::path getAssetsPath() const { return m_config.path / "assets"; }
 
   bool hasProject() const { return m_has_project; }
+  void setDefaultScene(const UUID& scene_id);
+  UUID getDefaultScene() const;
 
  private:
   bool serialize(const std::filesystem::path& path);

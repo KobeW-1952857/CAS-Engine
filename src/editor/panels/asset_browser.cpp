@@ -23,8 +23,14 @@ void AssetBrowser::drawContextMenu(const AssetContextMenu& menu) {
     if (ImGui::MenuItem(ICON_MD_IMAGE_SIZE_SELECT_LARGE " New Scene"))
       m_context.assets.createNewAsset<Scene>(m_context.filesystem.getProjectPath(menu.path));
 
-  if (menu.can_delete) {
+  if (menu.can_create_folder || menu.can_create_material || menu.can_create_scene) ImGui::Separator();
+  if (!menu.custom_items.empty()) {
+    for (const auto& [label, action] : menu.custom_items)
+      if (ImGui::MenuItem(label)) action();
     ImGui::Separator();
+  }
+
+  if (menu.can_delete) {
     if (ImGui::MenuItem(ICON_MD_DELETE " Delete")) m_context.filesystem.deletePath(menu.path);
   }
 
@@ -48,6 +54,15 @@ AssetBrowser::AssetContextMenu AssetBrowser::generateContextMenu(const std::file
       menu.can_delete = true;
     } else if (meta.type == AssetType::Scene) {
       menu.can_delete = true;
+    }
+    switch (meta.type) {
+      case AssetType::Scene:
+        if (handle != m_context.project.getDefaultScene())
+          menu.custom_items.push_back(
+              {"Set as Default", [this, handle] { m_context.project.setDefaultScene(handle); }});
+        break;
+      default:
+        break;
     }
   }
 
@@ -110,10 +125,17 @@ void AssetBrowser::drawFileNode(const std::filesystem::path& path, SelectionCont
   auto handle = m_context.assets.getHandleFromPath(selected_path);
   auto meta = m_context.assets.getAssetMetadata(handle);
 
+  if (meta.type == AssetType::Scene && handle == m_context.project.getDefaultScene()) {
+    // Highlight the default scene in a different color
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.8f, 1.0f, 1.0f));
+  }
+
   if (ImGui::Selectable(std::format("{} {}", getAssetTypeIcon(meta.type), path.stem().string().c_str()).c_str(),
                         m_selected == path)) {
     selection_context = handle;
   }
+  if (meta.type == AssetType::Scene && handle == m_context.project.getDefaultScene()) ImGui::PopStyleColor();
+
   auto menu = generateContextMenu(path);
   drawContextMenu(menu);
 

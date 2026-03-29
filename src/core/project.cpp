@@ -100,3 +100,9 @@ bool Project::deserialize(const std::filesystem::path& path) {
 
   return true;
 }
+
+void Project::setDefaultScene(const UUID& scene_id) {
+  m_config.start_scene = scene_id;
+  save();
+}
+UUID Project::getDefaultScene() const { return m_config.start_scene; }

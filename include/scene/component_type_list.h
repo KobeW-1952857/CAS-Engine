@@ -24,7 +24,7 @@ concept Component =
 
 using AllComponentTypes =
     std::tuple<IDComponent, TagComponent, ParentComponent, ChildrenComponent, TransformComponent, MeshComponent,
-               MaterialComponent, LineComponent, BezierComponent, LineFollowerComponent>;
+               MaterialComponent, LineComponent, BezierComponent, LineFollowerComponent, LaticeComponent>;
 
 template <typename T>
 concept CurveConcept = requires(const T& a, float t) {

@@ -43,6 +43,7 @@ add_executable(CASEngine
     src/renderer/shader.cpp
     src/renderer/systems/mesh_renderer_system.cpp
     src/renderer/systems/line_renderer_system.cpp
+    src/renderer/systems/latice_renderer_system.cpp
     src/renderer/systems/bezier_renderer_system.cpp
     src/renderer/tesselation_shader.cpp
     src/renderer/texture.cpp

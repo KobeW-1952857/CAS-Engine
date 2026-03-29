@@ -17,6 +17,7 @@
 #include "renderer/framebuffer.h"
 #include "renderer/renderer.h"
 #include "renderer/systems/bezier_renderer_system.h"
+#include "renderer/systems/latice_renderer_system.h"
 #include "renderer/systems/line_renderer_system.h"
 #include "renderer/systems/mesh_renderer_system.h"
 #include "scene/components/transform_component.h"
@@ -116,6 +117,7 @@ void Editor::openScene(UUID handle) {
   scene->registerRenderSystem(std::make_unique<MeshRenderSystem>());
   scene->registerRenderSystem(std::make_unique<LineRendererSystem>(m_context.filesystem));
   scene->registerRenderSystem(std::make_unique<BezierRendererSystem>(m_context.filesystem));
+  scene->registerRenderSystem(std::make_unique<LaticeRendererSystem>(m_context.filesystem));
 
   scene->registerLogicSystem(std::make_unique<LineFollowerSystem>());
 }
